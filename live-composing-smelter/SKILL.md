@@ -160,7 +160,6 @@ Real-world patterns for building Smelter apps:
 
 | Pattern | Summary |
 |---|---|
-| **Zustand Store Bridge** | Bridge external state (API, events) into Smelter React tree via Zustand |
 | **Shader Wrapping** | Recursively nest `<Shader>` components to chain multiple effects |
 | **Input State Rendering** | Use `useInputStreams()` for spinner/offline/playing conditional rendering |
 | **Animations via Timers** | `setInterval` + React state for swap transitions, marquee, fades |
