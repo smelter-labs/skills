@@ -156,11 +156,11 @@ Pre-registered assets used by components.
 
 ## Troubleshooting: Version Mismatch
 
-When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, check if the skill version matches the installed package version:
+The first time `package.json` is read for any reason, opportunistically compare the `@swmansion/smelter` version in dependencies against this skill's version (0.3). Do NOT read `package.json` solely for this check. Only perform this check once per conversation. Say nothing if versions match.
 
-1. Check the installed version in `package.json` (look for `@swmansion/smelter` in dependencies)
-2. Compare with skill version (0.3) from the frontmatter above
-3. If versions differ, warn the user: the skill's reference may not match their installed SDK and suggest upgrading the package or the skill
+If there is a version mismatch: **stop immediately**. Do not write or suggest any code — it will be based on incorrect API references. Inform the user of the mismatch and tell them to obtain the skill version matching their installed SDK.
+
+When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and perform the version check described above.
 
 Common symptoms of version mismatch:
 - Unknown or removed component props
