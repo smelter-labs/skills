@@ -154,6 +154,20 @@ Pre-registered assets used by components.
 
 → Full details: `references/resources.md`
 
+## Troubleshooting: Version Mismatch
+
+When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, check if the skill version matches the installed package version:
+
+1. Check the installed version in `package.json` (look for `@swmansion/smelter` in dependencies)
+2. Compare with skill version (0.3) from the frontmatter above
+3. If versions differ, warn the user: the skill's reference may not match their installed SDK and suggest upgrading the package or the skill
+
+Common symptoms of version mismatch:
+- Unknown or removed component props
+- Missing fields in input/output registration options
+- Type errors on options that previously worked
+- Deprecated API patterns that no longer compile
+
 ## Patterns & Best Practices
 
 Real-world patterns for building Smelter apps:
