@@ -1,5 +1,5 @@
 ---
-name: smelter-ts-sdk
+name: smelter-ts-docs
 description: >
   Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter), version 0.3.
   Smelter is a media processing framework that uses React components to define video/audio compositions.
