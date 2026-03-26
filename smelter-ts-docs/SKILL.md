@@ -158,7 +158,7 @@ Pre-registered assets used by components.
 
 This documentation refers to `^0.3.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
 
-If the version is incorrect, abort your current task and inform the user to install the correct skill.
+If the version is incorrect, **stop your current task immediately** and inform the user to install the correct skill.
 
 ## Patterns & Best Practices
 
