@@ -1,7 +1,7 @@
 ---
 name: smelter-ts-docs
 description: >
-  Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter), version 0.3.
+  Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter).
   Smelter is a media processing framework that uses React components to define video/audio compositions.
   Use this skill when the user is building, debugging, or extending a Smelter TypeScript application,
   asking about Smelter components, hooks, inputs, outputs, resources, or choosing between runtime packages
@@ -156,17 +156,9 @@ Pre-registered assets used by components.
 
 ## Troubleshooting: Version Mismatch
 
-The first time `package.json` is read for any reason, opportunistically compare the `@swmansion/smelter` version in dependencies against this skill's version (0.3). Do NOT read `package.json` solely for this check. Only perform this check once per conversation. Say nothing if versions match.
+This documentation refers to `^0.3.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
 
-If there is a version mismatch: **stop immediately**. Do not write or suggest any code — it will be based on incorrect API references. Inform the user of the mismatch and tell them to obtain the skill version matching their installed SDK.
-
-When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and perform the version check described above.
-
-Common symptoms of version mismatch:
-- Unknown or removed component props
-- Missing fields in input/output registration options
-- Type errors on options that previously worked
-- Deprecated API patterns that no longer compile
+If the version is incorrect, abort your current task and inform the user to install the correct skill.
 
 ## Patterns & Best Practices
 
