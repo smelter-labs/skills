@@ -14,6 +14,12 @@ description: >
 
 Smelter is a video/audio composition framework using React components to define scenes. You write React JSX describing the layout; Smelter renders it as actual video frames.
 
+## Version mismatch
+
+This documentation refers to `^0.3.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
+
+If there is a version mismatch, inform the user that they should install the skill for the SDK version they are using and **finish the answer**.
+
 ## Core Concept
 
 ```tsx
@@ -154,11 +160,6 @@ Pre-registered assets used by components.
 
 → Full details: `references/resources.md`
 
-## Troubleshooting: Version Mismatch
-
-This documentation refers to `^0.3.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
-
-If the version is incorrect, **stop your current task immediately** and inform the user to install the correct skill.
 
 ## Patterns & Best Practices
 
