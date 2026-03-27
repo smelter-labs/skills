@@ -19,9 +19,3 @@ The project is using a newer version of the smelter packages than this skill doc
 ```bash
 npx skills add smelter-labs/skills -s smelter-ts-docs
 ```
-
-If the project is using a release candidate version, suggest updating with:
-
-```bash
-npx skills add https://github.com/smelter-labs/skills/tree/next/smelter-ts-docs
-```
