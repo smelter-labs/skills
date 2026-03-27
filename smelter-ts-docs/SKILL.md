@@ -1,7 +1,7 @@
 ---
 name: smelter-ts-docs
 description: >
-  Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter), version 0.3.
+  Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter).
   Smelter is a media processing framework that uses React components to define video/audio compositions.
   Use this skill when the user is building, debugging, or extending a Smelter TypeScript application,
   asking about Smelter components, hooks, inputs, outputs, resources, or choosing between runtime packages
@@ -13,6 +13,13 @@ description: >
 # Smelter TypeScript SDK
 
 Smelter is a video/audio composition framework using React components to define scenes. You write React JSX describing the layout; Smelter renders it as actual video frames.
+
+## Version mismatch
+
+This documentation refers to `^0.3.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
+
+If there is a version mismatch, inform the user about the **actions** they can take to resolve it and **finish the answer immediately**.
+→ For detailed instructions on what **actions** the user can take: `references/update.md`
 
 ## Core Concept
 
@@ -153,6 +160,7 @@ Pre-registered assets used by components.
 | Font | `smelter.registerFont(source)` | `<Text>` components |
 
 → Full details: `references/resources.md`
+
 
 ## Patterns & Best Practices
 
