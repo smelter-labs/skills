@@ -16,6 +16,8 @@ Inputs are registered via `smelter.registerInput(id, options)`. The `type` field
 - [Screen Capture (WASM)](#screen-capture-wasm) — Web WASM only
 - [MediaStream (WASM)](#mediastream-wasm) — Web WASM only
 - [WHEP Client (WASM)](#whep-client-wasm) — Web WASM only
+- [Return Type: InputHandle](#return-type-inputhandle) — Handle returned from registerInput
+- [Updating Inputs](#updating-inputs) — Pause, resume, seek via handle or low-level API
 
 ---
 
@@ -51,6 +53,7 @@ type RegisterMp4Input = {
   loop?: boolean;        // Node.js only, default: false
   required?: boolean;    // Node.js only, default: false
   offsetMs?: number;     // Node.js only
+  seekMs?: number;       // Start from specific position (ms). With loop, resets to 0 after first iteration.
   decoderMap?: { h264?: 'ffmpeg_h264' | 'vulkan_h264' };
 }
 ```
@@ -219,5 +222,58 @@ type RegisterWhepClientInput = {
   type: "whep_client";
   endpointUrl: string;
   bearerToken?: string;
+}
+```
+
+---
+
+## Return Type: InputHandle
+
+`registerInput` returns an `InputHandle` (or a type-specific subclass). The handle provides methods to control the input after registration.
+
+```tsx
+// Base InputHandle (returned for most input types)
+class InputHandle {
+  videoDurationMs?: number;  // MP4 only
+  audioDurationMs?: number;  // MP4 only
+  pause(): Promise<void>;
+  resume(): Promise<void>;
+}
+
+// Returned when registering { type: "mp4" }
+class Mp4InputHandle extends InputHandle {
+  seek(seekMs: number): Promise<void>;  // Seek to position in milliseconds
+}
+
+// Returned when registering { type: "whip_server" }
+class WhipInputHandle extends InputHandle {
+  endpointRoute: string;
+  bearerToken: string;
+}
+```
+
+In `smelter-node` and `smelter-web-client`, the return type is overloaded per input type:
+```tsx
+registerInput(id, { type: "mp4", ... }): Promise<Mp4InputHandle>
+registerInput(id, { type: "whip_server", ... }): Promise<WhipInputHandle>
+registerInput(id, request): Promise<InputHandle>  // all others
+```
+
+---
+
+## Updating Inputs
+
+Registered inputs can be updated via the handle methods (`pause()`, `resume()`, `seek()`) or the low-level API:
+
+```tsx
+await smelter.api.updateInput(inputId, { pause: true });
+await smelter.api.updateInput(inputId, { seek_ms: 5000 });  // MP4 only
+```
+
+`UpdateInputRequest`:
+```tsx
+interface UpdateInputRequest {
+  pause?: boolean;    // Pause/unpause input playback
+  seek_ms?: number;   // Seek to position in ms (MP4 only)
 }
 ```
