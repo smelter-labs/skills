@@ -1,0 +1,11 @@
+{
+  "name": "smelter-ts-docs",
+  "version": "0.3.0",
+  "description": "Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter). Provides components, hooks, inputs, outputs, and patterns documentation.",
+  "author": {
+    "name": "Smelter Labs"
+  },
+  "repository": "https://github.com/smelter-labs/skills",
+  "license": "MIT",
+  "keywords": ["smelter", "video", "audio", "composition", "react", "typescript", "streaming"]
+}
