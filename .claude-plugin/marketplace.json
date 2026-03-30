@@ -1,0 +1,17 @@
+{
+  "name": "smelter-plugins",
+  "description": "Claude Code plugins for Smelter — a video/audio composition framework by Software Mansion",
+  "owner": {
+    "name": "Software Mansion",
+    "url": "https://swmansion.com"
+  },
+  "plugins": [
+    {
+      "name": "smelter-ts-docs",
+      "description": "Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter). Components, hooks, inputs, outputs, and patterns for video/audio composition with React.",
+      "category": "development",
+      "source": "./smelter-ts-docs",
+      "homepage": "https://github.com/smelter-labs/skills"
+    }
+  ]
+}
