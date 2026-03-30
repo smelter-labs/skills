@@ -52,7 +52,7 @@ void run();
 |---|---|
 | `registerOutput(id, root, options)` | Register an output stream with React root |
 | `unregisterOutput(id)` | Stop and remove an output |
-| `registerInput(id, options)` | Register an input stream |
+| `registerInput(id, options)` | Register an input stream. Returns `InputHandle` (`Mp4InputHandle` for mp4, `WhipInputHandle` for whip_server) |
 | `unregisterInput(id)` | Remove an input |
 | `registerImage(id, options)` | Register image asset |
 | `registerShader(id, options)` | Register WGSL shader |

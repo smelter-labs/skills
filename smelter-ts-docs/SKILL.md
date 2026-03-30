@@ -113,7 +113,7 @@ import { View, Text, InputStream, Tiles, Rescaler, Image, Mp4, Shader, Show, Sli
 
 ## Inputs
 
-Registered via `smelter.registerInput(id, options)`. Displayed via `<InputStream inputId="id" />`.
+Registered via `smelter.registerInput(id, options)`. Returns an `InputHandle` with methods for runtime control (`pause()`, `resume()`, and `seek()` for MP4). Displayed via `<InputStream inputId="id" />`.
 
 | Input type | Runtime | Use when |
 |---|---|---|
