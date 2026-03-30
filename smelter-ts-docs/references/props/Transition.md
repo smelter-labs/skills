@@ -6,6 +6,7 @@ Controls animated transitions between scene updates for `View`, `Tiles`, and `Re
 type Transition = {
     durationMs: number;
     easingFunction?: EasingFunction | null;
+    shouldInterrupt?: boolean;
 }
 ```
 
@@ -19,6 +20,11 @@ Duration of the transition animation in milliseconds.
 Interpolation function for the animation.
 - **Type**: `EasingFunction` — see `references/props/EasingFunction.md`
 - **Default**: `"linear"`
+
+### shouldInterrupt
+If `true`, instead of continuing a currently ongoing transition, the new transition starts from the current state.
+- **Type**: `boolean`
+- **Default**: `false`
 
 ## Supported Animated Fields (View & Rescaler)
 

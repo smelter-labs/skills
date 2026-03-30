@@ -10,7 +10,8 @@ Inputs are registered via `smelter.registerInput(id, options)`. The `type` field
 - [HLS](#hls) — Node.js
 - [WHIP Server](#whip-server) — Node.js, Web Client
 - [WHEP Client](#whep-client) — Node.js, Web Client
-- [RTMP Server](#rtmp-server) — Node.js, Web Client (Experimental)
+- [RTMP Server](#rtmp-server) — Node.js, Web Client
+- [V4L2](#v4l2) — Node.js, Web Client (Experimental)
 - [Camera (WASM)](#camera-wasm) — Web WASM only
 - [Screen Capture (WASM)](#screen-capture-wasm) — Web WASM only
 - [MediaStream (WASM)](#mediastream-wasm) — Web WASM only
@@ -137,19 +138,44 @@ type RegisterWhepClientInput = {
 
 ## RTMP Server
 
-Experimental. Each input starts a separate RTMP server. Push from OBS, FFmpeg, or any RTMP broadcaster.
+Receives RTMP/RTMPS streams. Smelter exposes an RTMP endpoint after registration. Push from OBS, FFmpeg, or any RTMP broadcaster.
 
-> **Limitation**: No stream key validation, no RTMPS support. Use nginx with `nginx-rtmp-module` as a proxy in production.
+Connection URL format: `rtmp[s]://<smelter_ip>:<port>/<app>/<stream_key>`
+
+Port defaults to `1935`, configurable via `SMELTER_RTMP_SERVER_PORT`. For RTMPS, configure `SMELTER_RTMP_TLS_CERT_FILE` and `SMELTER_RTMP_TLS_KEY_FILE` env vars.
 
 ```tsx
 type RegisterRtmpServerInput = {
   type: "rtmp_server";
-  url: string;   // e.g., "rtmp://127.0.0.1:1935"
+  app: string;
+  streamKey: string;
   required?: boolean;
   offsetMs?: number;
   decoderMap?: { h264?: 'ffmpeg_h264' | 'vulkan_h264' };
 }
 ```
+
+---
+
+## V4L2
+
+Experimental. Captures video using the Video for Linux 2 API. Linux only.
+
+```tsx
+type RegisterV4l2Input = {
+  type: "v4l2";
+  path: string;              // e.g., "/dev/video0"
+  format: "yuyv" | "nv12";
+  resolution: {
+    width: number;
+    height: number;
+  };
+  framerate: number | string; // number or "NUM/DEN" fraction
+  required?: boolean;
+}
+```
+
+V4L2 devices are found at paths like `/dev/video[N]`, `/dev/v4l/by-id/[DEVICE ID]`, or `/dev/v4l/by-path/[PCI/USB PATH]`. Supported formats: YUYV (interleaved 4:2:2 YUV) and NV12 (planar 4:2:0 YUV). Resolution and framerate may be adjusted by the device driver to the closest supported values.
 
 ---
 

@@ -143,4 +143,4 @@ const smelter = new Smelter(manager);
 
 | SDK version | Smelter server | React |
 |---|---|---|
-| v0.3.0 | v0.5.0 | 18.3.1 (recommended) |
+| v0.4.0 | v0.6.0 | 18.3.1 (recommended) |

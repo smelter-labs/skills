@@ -16,7 +16,7 @@ Smelter is a video/audio composition framework using React components to define 
 
 ## Version mismatch
 
-This documentation refers to `^0.3.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
+This documentation refers to `^0.4.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
 
 If there is a version mismatch, inform the user about the **actions** they can take to resolve it and **finish the answer immediately**.
 → For detailed instructions on what **actions** the user can take: `references/update.md`
@@ -122,7 +122,8 @@ Registered via `smelter.registerInput(id, options)`. Displayed via `<InputStream
 | `hls` | Node.js | Consume HLS playlist |
 | `whip_server` | Node.js, Web Client | Accept WebRTC stream via WHIP protocol |
 | `whep_client` | Node.js, Web Client | Pull stream from WHEP server |
-| `rtmp_server` | Node.js, Web Client | Accept RTMP stream (OBS, FFmpeg) — experimental |
+| `rtmp_server` | Node.js, Web Client | Accept RTMP/RTMPS stream (OBS, FFmpeg) |
+| `v4l2` | Node.js, Web Client | Capture video via V4L2 API (Linux) — experimental |
 | `camera` | WASM only | Browser camera via `getUserMedia()` |
 | `screen_capture` | WASM only | Browser screen capture via `getDisplayMedia()` |
 | `stream` | WASM only | Any `MediaStream` object |
