@@ -147,5 +147,4 @@ Shaders in WASM accept only ONE texture (`texture_2d<f32>` instead of `binding_a
 
 | SDK version | Supported browsers | React |
 |---|---|---|
-| v0.2.0, v0.2.1 | Chrome and Chromium-based | 18.3.1 (recommended) |
 | v0.3.0 | Chrome and Chromium-based | 18.3.1 (recommended) |
