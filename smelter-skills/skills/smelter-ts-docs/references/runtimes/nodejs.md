@@ -2,6 +2,16 @@
 
 Controls a Smelter server from a Node.js process. React code runs in Node.js; updates are transmitted to the Smelter server via HTTP.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Smelter (Live Processing)](#smelter-live-processing) — Dynamic, real-time scenarios
+- [OfflineSmelter (Offline Processing)](#offlinesmelter-offline-processing) — Static file processing
+- [SmelterManager](#smeltermanager) — Server connection management
+- [Compatibility](#compatibility)
+
+---
+
 ## Installation
 
 ```bash
