@@ -104,7 +104,7 @@ import { View, Text, InputStream, Tiles, Rescaler, Image, Mp4, Shader, Show, Sli
 
 | Hook | Summary | When to use |
 |---|---|---|
-| **useInputStreams()** | Returns state of all registered inputs | Conditionally render based on stream status (ready/playing/finished) - TODO: Change |
+| **useInputStreams()** | Returns state of all registered inputs | Conditionally render based on stream status (ready/playing/finished) |
 | **useAudioInput(id, opts)** | Controls audio for an input without rendering it visually | Background audio mixing without visual component |
 | **useAfterTimestamp(ms)** | Returns `true` once a timestamp passes | Time-based scene changes in offline processing |
 | **useBlockingTask(fn)** | Runs async fn, blocks offline rendering until resolved | Load remote data before offline rendering proceeds |
