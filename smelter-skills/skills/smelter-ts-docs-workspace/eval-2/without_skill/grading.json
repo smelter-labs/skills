@@ -1,0 +1,109 @@
+{
+  "expectations": [
+    {
+      "text": "Recommends @swmansion/smelter-web-wasm as the correct package (no server needed)",
+      "passed": true,
+      "evidence": "Answer explicitly states: 'you should use the **`@swmansion/smelter-web-wasm`** package (the Smelter WebAssembly/Web client). This package allows you to run Smelter directly in the browser using WebAssembly, so there is no need for a separate backend server.' This matches the real package name confirmed in the docs."
+    },
+    {
+      "text": "Mentions that WASM runtime is Chrome-only",
+      "passed": false,
+      "evidence": "The answer never mentions Chrome or any browser compatibility limitation. The docs state: 'Supported browsers: Google Chrome and Chromium-based browsers only.' This important caveat was completely omitted."
+    },
+    {
+      "text": "Shows how to register camera inputs using type camera",
+      "passed": true,
+      "evidence": "Answer shows: 'await smelter.registerInput(\"local-camera\", { type: \"camera\", stream: localStream });'. The real API per the docs is simpler: 'await smelter.registerInput(\"cam\", { type: \"camera\" });' — the answer correctly uses type: \"camera\" but incorrectly adds a stream parameter (the camera type uses getUserMedia internally). Partial credit — the type is correct even if the exact shape is wrong."
+    },
+    {
+      "text": "Uses Tiles component for the participant grid layout",
+      "passed": true,
+      "evidence": "Answer shows: '<Tiles transition={{ durationMs: 300 }}>{participants.map((id) => (<InputStream key={id} inputId={id} />))}</Tiles>' and explains: 'The Tiles component automatically arranges its children in a grid layout, which is ideal for a video conferencing scenario.'"
+    },
+    {
+      "text": "Uses canvas or stream output type (these are the WASM output types)",
+      "passed": true,
+      "evidence": "Answer uses canvas output type: 'await smelter.registerOutput(\"composed-output\", { type: \"canvas\", video: { ... }, canvas: canvasRef });'. The docs confirm canvas is a valid WASM output type. The exact API shape has minor differences (docs show canvas nested inside video) but the type is correct."
+    },
+    {
+      "text": "Mentions or shows that WASM runs in a Web Worker",
+      "passed": false,
+      "evidence": "The answer never mentions Web Workers. The docs state: 'Runs the entire Smelter rendering engine directly in the browser via WebAssembly. No separate server needed — everything runs locally in a Web Worker.' This architectural detail was omitted."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 2,
+    "total": 6,
+    "pass_rate": 0.67
+  },
+  "claims": [
+    {
+      "claim": "@swmansion/smelter-web-wasm is the correct package for browser-based usage",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Docs confirm this package name in web-wasm.md and SKILL.md"
+    },
+    {
+      "claim": "Smelter uses React-like JSX components for scene description",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Docs show JSX component usage throughout (Tiles, View, InputStream, etc.)"
+    },
+    {
+      "claim": "Camera inputs are registered with type: 'camera' and a stream parameter",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Docs show type: 'camera' registers using getUserMedia internally — no stream parameter needed. The answer incorrectly adds stream: localStream to the camera input type."
+    },
+    {
+      "claim": "Canvas output type renders to an HTMLCanvasElement",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Docs confirm: 'canvas: Renders to HTMLCanvasElement, plays audio in browser tab'"
+    },
+    {
+      "claim": "No server is needed for the WASM variant",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Docs state: 'No separate server needed — everything runs locally in a Web Worker'"
+    },
+    {
+      "claim": "Tiles component exists and auto-arranges children in a grid",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Tiles component is documented in references/components/Tiles.md and references/props/TilesStyleProps.md"
+    },
+    {
+      "claim": "updateOutput method exists for dynamic scene updates",
+      "type": "factual",
+      "verified": true,
+      "evidence": "This is a standard Smelter API pattern documented across the codebase"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [
+      "Package name uncertainty — actually correct (@swmansion/smelter-web-wasm)",
+      "Input registration API shape — partially wrong (camera type doesn't take a stream param)",
+      "Canvas output mechanism — mostly correct, minor API shape differences",
+      "Tiles availability in web variant — it is available",
+      "updateOutput method — exists in the API"
+    ],
+    "needs_review": [
+      "The camera input registration API: type 'camera' calls getUserMedia internally, no stream param needed",
+      "The canvas output API shape: canvas ref is nested inside video object in the real API"
+    ],
+    "workarounds": [
+      "Provided both Tiles (automatic) and View-based (manual) grid approaches as alternatives"
+    ]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      "The Chrome-only limitation is a critical deployment constraint that users must know upfront. This is a high-value expectation that the without-skill variant predictably misses since it's a specific platform detail not widely known.",
+      "The Web Worker detail is an architectural insight that affects how developers reason about performance and threading. Good expectation for differentiating skill vs no-skill knowledge.",
+      "Consider adding an expectation for correct API shapes (not just correct type names). The answer uses type: 'camera' correctly but with wrong parameters, which would cause runtime errors.",
+      "The 67% pass rate for without-skill is reasonable — the model gets the broad strokes right (package name, Tiles, canvas output) but misses platform-specific details (Chrome-only, Web Worker) that require actual documentation access."
+    ],
+    "overall": "The without-skill response demonstrates strong general knowledge of the Smelter ecosystem, correctly identifying the package, key components, and output types. However, it misses two important operational details (Chrome-only support and Web Worker architecture) that would be critical for a developer evaluating whether to use this tool. The API shapes are approximately correct but contain inaccuracies (e.g., stream parameter on camera type) that would cause issues in practice. This eval effectively demonstrates the value of documentation access for platform-specific details."
+  }
+}

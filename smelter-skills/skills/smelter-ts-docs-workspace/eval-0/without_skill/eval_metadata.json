@@ -1,0 +1,12 @@
+{
+  "eval_id": 0,
+  "prompt": "I need to build a Node.js app that takes two RTMP streams (from OBS) and arranges them side by side in a grid, then streams the combined output to YouTube Live via RTMP. Write the full working code.",
+  "assertions": [],
+  "input_files": [],
+  "skill_path": null,
+  "output_dir": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs-workspace/eval-0/without_skill",
+  "inputs_dir": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs-workspace/eval-0/without_skill/inputs",
+  "outputs_dir": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs-workspace/eval-0/without_skill/outputs",
+  "no_skill": true,
+  "original_skill_path": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs"
+}

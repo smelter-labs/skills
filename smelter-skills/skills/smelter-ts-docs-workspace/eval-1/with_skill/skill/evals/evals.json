@@ -1,0 +1,65 @@
+{
+  "skill_name": "smelter-ts-docs",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to build a Node.js app that takes two RTMP streams (from OBS) and arranges them side by side in a grid, then streams the combined output to YouTube Live via RTMP. Write the full working code.",
+      "expected_output": "A complete Node.js script using @swmansion/smelter-node that registers two RTMP server inputs, uses a Tiles component for the side-by-side layout, and outputs via rtmp_client to YouTube.",
+      "files": [],
+      "expectations": [
+        "Uses import from @swmansion/smelter-node (default import for Smelter class)",
+        "Calls smelter.init() before registering inputs or outputs",
+        "Registers inputs with type rtmp_server",
+        "Uses the Tiles component from @swmansion/smelter for the side-by-side layout",
+        "Registers output with type rtmp_client and provides a url field",
+        "Includes video encoder configuration (e.g. ffmpeg_h264) and resolution in the output",
+        "Includes audio configuration with aac encoder in the output (AAC is required for RTMP)",
+        "Calls smelter.start() to begin processing"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "How do I render a lower-third text overlay with a semi-transparent dark background on top of a live video stream in Smelter? I'm using Node.js.",
+      "expected_output": "Code showing a View with absolute positioning containing the text overlay, placed on top of an InputStream, with proper styling for the semi-transparent background.",
+      "files": [],
+      "expectations": [
+        "Uses a View component as the root container with explicit width and height",
+        "Uses InputStream component to display the video stream",
+        "Uses Text component from @swmansion/smelter for the lower-third text",
+        "The text overlay is positioned at the bottom of the screen using absolute positioning (top/left/bottom/right props on a child View)",
+        "Includes a backgroundColor with alpha channel for semi-transparency (e.g. #00000080 or similar)",
+        "Text component has fontSize set (fontSize is required in TextStyleProps)",
+        "The code shows the correct import pattern from @swmansion/smelter"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I want to build a browser-based video conferencing app where each participant's camera is shown in a grid. I don't want to run a separate server. Which Smelter package should I use and how do I set it up?",
+      "expected_output": "Recommends @swmansion/smelter-web-wasm since no server is needed, explains it runs in a Web Worker, mentions Chrome-only limitation, and shows setup with camera inputs.",
+      "files": [],
+      "expectations": [
+        "Recommends @swmansion/smelter-web-wasm as the correct package (no server needed)",
+        "Mentions that WASM runtime is Chrome-only",
+        "Shows how to register camera inputs using type camera",
+        "Uses Tiles component for the participant grid layout",
+        "Uses canvas or stream output type (these are the WASM output types)",
+        "Mentions or shows that WASM runs in a Web Worker"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I have an MP4 video file and I want to use Smelter to add a title card at the beginning (first 3 seconds show title text, then the video plays). Output to a new MP4 file. Node.js please.",
+      "expected_output": "Uses OfflineSmelter with the render() method, registers MP4 input, uses Show or SlideShow for time-based sequencing, and outputs to MP4.",
+      "files": [],
+      "expectations": [
+        "Uses OfflineSmelter from @swmansion/smelter-node (not the live Smelter class)",
+        "Calls smelter.render() instead of registerOutput + start (OfflineSmelter API)",
+        "Registers input with type mp4",
+        "Uses a time-based mechanism for the title card (Show component with useAfterTimestamp, or SlideShow with Slide components)",
+        "Uses Text component for the title text",
+        "Output type is mp4 with serverPath specified",
+        "Includes video encoder and resolution configuration"
+      ]
+    }
+  ]
+}

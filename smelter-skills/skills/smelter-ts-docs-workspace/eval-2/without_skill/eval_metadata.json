@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "prompt": "I want to build a browser-based video conferencing app where each participant's camera is shown in a grid. I don't want to run a separate server. Which Smelter package should I use and how do I set it up?",
+  "assertions": [],
+  "input_files": [],
+  "skill_path": null,
+  "output_dir": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs-workspace/eval-2/without_skill",
+  "inputs_dir": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs-workspace/eval-2/without_skill/inputs",
+  "outputs_dir": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs-workspace/eval-2/without_skill/outputs",
+  "no_skill": true,
+  "original_skill_path": "/home/jbrs/Documents/code/work/smelter/skills/smelter-skills/skills/smelter-ts-docs"
+}

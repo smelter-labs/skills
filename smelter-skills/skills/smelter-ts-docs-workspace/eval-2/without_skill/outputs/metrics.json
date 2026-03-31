@@ -1,0 +1,25 @@
+{
+  "eval_id": "eval-2-without-skill",
+  "prompt": "I want to build a browser-based video conferencing app where each participant's camera is shown in a grid. I don't want to run a separate server. Which Smelter package should I use and how do I set it up?",
+  "skill_used": false,
+  "tool_calls": {
+    "bash": 1,
+    "write": 5,
+    "read": 0,
+    "edit": 0,
+    "grep": 0,
+    "glob": 0,
+    "skill": 0,
+    "tool_search": 0
+  },
+  "total_tool_calls": 6,
+  "docs_consulted": 0,
+  "confidence_level": "low-to-medium",
+  "key_uncertainties": [
+    "exact web package name",
+    "input registration API shape for MediaStream",
+    "canvas output mechanism",
+    "Tiles component availability in web variant",
+    "updateOutput method signature"
+  ]
+}

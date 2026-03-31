@@ -1,0 +1,102 @@
+{
+  "expectations": [
+    {
+      "text": "Uses import from @swmansion/smelter-node (default import for Smelter class)",
+      "passed": true,
+      "evidence": "Line 1: `import Smelter from \"@swmansion/smelter-node\";`"
+    },
+    {
+      "text": "Calls smelter.init() before registering inputs or outputs",
+      "passed": true,
+      "evidence": "Line 37: `await smelter.init();` is called before registerInput on line 41 and registerOutput on line 52."
+    },
+    {
+      "text": "Registers inputs with type rtmp_server",
+      "passed": true,
+      "evidence": "Lines 41-44: `await smelter.registerInput(\"obs_1\", { type: \"rtmp_server\", url: \"rtmp://127.0.0.1:1935\" });` and lines 46-49 for obs_2 with port 1936."
+    },
+    {
+      "text": "Uses the Tiles component from @swmansion/smelter for the side-by-side layout",
+      "passed": true,
+      "evidence": "Line 2: `import { View, Text, Tiles, InputStream, useInputStreams } from \"@swmansion/smelter\";` and line 12: `<Tiles style={{ width: 1920, height: 1080 }}>` wrapping two InputStream children."
+    },
+    {
+      "text": "Registers output with type rtmp_client and provides a url field",
+      "passed": true,
+      "evidence": "Lines 52-54: `await smelter.registerOutput(\"youtube\", <Scene />, { type: \"rtmp_client\", url: YOUTUBE_RTMP_URL, ...` where YOUTUBE_RTMP_URL is defined on line 4."
+    },
+    {
+      "text": "Includes video encoder configuration (e.g. ffmpeg_h264) and resolution in the output",
+      "passed": true,
+      "evidence": "Lines 55-57: `video: { encoder: { type: \"ffmpeg_h264\", preset: \"fast\" }, resolution: { width: 1920, height: 1080 } }`"
+    },
+    {
+      "text": "Includes audio configuration with aac encoder in the output (AAC is required for RTMP)",
+      "passed": true,
+      "evidence": "Lines 59-61: `audio: { channels: \"stereo\", encoder: { type: \"aac\" } }`"
+    },
+    {
+      "text": "Calls smelter.start() to begin processing",
+      "passed": true,
+      "evidence": "Line 65: `await smelter.start();`"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "claims": [
+    {
+      "claim": "rtmp_server input type is used to receive OBS streams",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Step 3 confirms rtmp_server is the correct input type for receiving RTMP pushes, and the code uses it on lines 42 and 47."
+    },
+    {
+      "claim": "Tiles component automatically arranges children side by side",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Step 5 states Tiles arranges children in equal-sized non-overlapping tiles and automatically calculates rows/columns. With 2 children it places them side by side."
+    },
+    {
+      "claim": "AAC is the only supported audio encoder for RTMP output",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript Step 4 states 'Audio encoder for RTMP is AAC only.' The code uses `{ type: \"aac\" }` accordingly."
+    },
+    {
+      "claim": "useInputStreams hook provides reactive stream state for conditional rendering",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Transcript Step 7 confirms the hook returns input states. Code uses `obs1?.videoState === \"playing\"` to conditionally render placeholder text."
+    },
+    {
+      "claim": "The executor read 7 reference files before writing code",
+      "type": "process",
+      "verified": true,
+      "evidence": "metrics.json shows 7 reads (SKILL.md, nodejs.md, inputs.md, outputs.md, Tiles.md, InputStream.md, useInputStreams.md) and the transcript documents each step."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [
+      "YOUTUBE_RTMP_URL must be replaced with actual stream key before running",
+      "rtmp_server input type is documented as experimental with no stream key validation and no RTMPS support"
+    ],
+    "workarounds": [
+      "For production use, consider placing an nginx proxy with nginx-rtmp-module in front of the RTMP server inputs"
+    ]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      "Add an expectation verifying that InputStream components are used to display the registered inputs (the code uses <InputStream inputId=\"obs_1\" /> etc.)",
+      "Add an expectation checking that the Scene component is passed to registerOutput as JSX, which is the Smelter pattern for declarative rendering",
+      "Add an expectation for useInputStreams or conditional rendering, since the code includes graceful handling of disconnected streams",
+      "Consider testing that the correct lifecycle order is fully enforced: init -> registerInput -> registerOutput -> start (not just init before register)",
+      "The current expectations are solid and cover all critical RTMP pipeline requirements; they could be strengthened by checking for correct port separation on the two rtmp_server inputs"
+    ],
+    "overall": "All 8 expectations passed. The code is well-structured, follows the documented Smelter lifecycle correctly, and includes bonus quality features (useInputStreams for placeholder text, proper stereo audio config). The expectations provide good coverage of the core RTMP pipeline requirements but could be extended to cover the component-level rendering patterns."
+  }
+}
