@@ -6,7 +6,7 @@ Repository contains [Agent Skills](https://agentskills.io/home) for [Smelter](ht
 
 ### Claude Code users
 
-Add marketplace to your Claude Code configuration:
+Add marketplace to Claude Code:
 ```bash
 /plugin marketplace add smelter-labs/skills
 ```
