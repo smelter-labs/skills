@@ -4,6 +4,15 @@ Runs the entire Smelter rendering engine directly in the browser via WebAssembly
 
 **Supported browsers**: Google Chrome and Chromium-based browsers only.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Required Configuration](#required-configuration) — WASM bundle URL, Next.js, Vite
+- [Smelter Class](#smelter-class) — Lifecycle, inputs, outputs, methods
+- [Compatibility](#compatibility)
+
+---
+
 ## Installation
 
 ```bash

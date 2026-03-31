@@ -7,7 +7,8 @@ description: >
   asking about Smelter components, hooks, inputs, outputs, resources, or choosing between runtime packages
   (@swmansion/smelter-node, @swmansion/smelter-web-client, @swmansion/smelter-web-wasm).
   Triggers: "smelter", "@swmansion/smelter", video composition in TypeScript/React,
-  mixing video streams, RTMP streaming with Smelter, video processing pipeline with React.
+  mixing video streams, RTMP streaming with Smelter, video processing pipeline with React,
+  offline rendering.
 ---
 
 # Smelter TypeScript SDK
