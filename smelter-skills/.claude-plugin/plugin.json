@@ -1,7 +1,7 @@
 {
-  "name": "smelter-ts-docs",
-  "version": "0.3.0",
-  "description": "Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter). Provides components, hooks, inputs, outputs, and patterns documentation.",
+  "name": "smelter-skills",
+  "version": "0.1.0",
+  "description": "Collection of skills for building applications with the Smelter TypeScript SDK (@swmansion/smelter) covering the React-like composition API, HTTP server implementation, and more.",
   "author": {
     "name": "Software Mansion",
     "url": "https://swmansion.com"
