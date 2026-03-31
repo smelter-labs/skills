@@ -11,9 +11,9 @@ Add marketplace to your Claude Code configuration:
 /plugin marketplace add smelter-labs/skills
 ```
 
-Install selected skill:
+Install skills:
 ```bash
-/plugin install smelter-ts-docs@smelter-skills
+/plugin install smelter-skills@smelter
 ```
 
 ### Other agents
