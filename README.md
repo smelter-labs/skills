@@ -34,7 +34,7 @@ npx skills add smelter-labs/skills -s smelter-ts-docs
 
 ### Evaluation
 
-New skills should be evaluated upon creation and every major update.
+All new skills and updates should be evaluated before being merged into `master`. Evaluation is costly, so it should be done once, directly before the merge:
 
 - Start new empty conversation with your AI agent
 - Load the Anthropic's `skill-creator` skill (if using Claude Code the best way of acquiring it is installing it as plugin)
@@ -45,5 +45,5 @@ New skills should be evaluated upon creation and every major update.
   /skill-creator Perform evaluation of the `smelter-ts-docs` skill using evals from @evals/smelter-ts-docs/evals.json. Add eval to check if mp4 pause and seek work work correctly.
   ```
 - The results will be saved into the `smelter-skills/skills/<SKILL>-workspace`. If model does not summarize them for you, tell him do and analyze the results.
-  - Evals with skill should be faster and have better pass rate in the 90% - 100% range than evals without skill.
+  - Evals with skill should have pass rate in the 90% - 100% range. For evals without skill it varies, but is significantly lower, sometimes even reaches 0%
 - Delete the `smelter-skills/skills/<SKILL>-workspace`
