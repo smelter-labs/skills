@@ -29,3 +29,21 @@ or install specific skill:
 ```bash
 npx skills add smelter-labs/skills -s smelter-ts-docs
 ```
+
+## Development
+
+### Evaluation
+
+New skills should be evaluated upon creation and every major update.
+
+- Start new empty conversation with your AI agent
+- Load the Anthropic's `skill-creator` skill (if using Claude Code the best way of acquiring it is installing it as plugin)
+- Perform evaluation using `JSON` file corresponding to the updated skill from the `evals` dir.
+  - If there any new functionalities, that you think should be covered in evals, tell the model to add them.
+  - e. g.
+  ```
+  /skill-creator Perform evaluation of the `smelter-ts-docs` skill using evals from @evals/smelter-ts-docs/evals.json. Add eval to check if mp4 pause and seek work work correctly.
+  ```
+- The results will be saved into the `smelter-skills/skills/<SKILL>-workspace`. If model does not summarize them for you, tell him do and analyze the results.
+  - Evals with skill should be faster and have better pass rate in the 90% - 100% range than evals without skill.
+- Delete the `smelter-skills/skills/<SKILL>-workspace`
