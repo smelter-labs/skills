@@ -60,6 +60,21 @@
         "Output type is mp4 with serverPath specified",
         "Includes video encoder and resolution configuration"
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "I'm building a video review tool in Node.js with Smelter. I have an MP4 file loaded as an input and I need to let users pause playback, resume it, and seek to a specific timestamp (e.g. jump to 30 seconds). How do I control MP4 playback like this? Show me the code.",
+      "expected_output": "Code demonstrating how to use the Mp4InputHandle returned from registerInput to pause, resume, and seek an MP4 input, including both the handle-based API and optionally the low-level updateInput API.",
+      "files": [],
+      "expectations": [
+        "Registers an MP4 input using smelter.registerInput with type mp4",
+        "Stores the return value of registerInput (the Mp4InputHandle) in a variable",
+        "Calls handle.pause() to pause MP4 playback",
+        "Calls handle.resume() to resume MP4 playback",
+        "Calls handle.seek(ms) to seek to a specific timestamp in milliseconds",
+        "The seek call uses a numeric milliseconds argument (e.g. 30000 for 30 seconds)",
+        "Does NOT invent non-existent API methods (e.g. no handle.stop(), handle.setPosition(), handle.jumpTo())"
+      ]
     }
   ]
 }
