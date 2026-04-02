@@ -1,0 +1,32 @@
+{
+  "name": "smelter",
+  "description": "Claude Code plugins for Smelter — a video/audio composition framework by Software Mansion",
+  "owner": {
+    "name": "Software Mansion",
+    "url": "https://swmansion.com"
+  },
+  "plugins": [
+    {
+      "name": "smelter-skills",
+      "description": "Collection of skills for building applications with the Smelter TypeScript SDK (@swmansion/smelter) covering the React-like composition API, HTTP server implementation, and more.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Software Mansion",
+        "url": "https://swmansion.com"
+      },
+      "license": "MIT",
+      "keywords": [
+        "smelter",
+        "video",
+        "audio",
+        "streaming",
+        "live-streaming",
+        "video-composition"
+      ],
+      "category": "development",
+      "source": "./smelter-skills",
+      "homepage": "https://github.com/smelter-labs/skills",
+      "strict": false
+    }
+  ]
+}
