@@ -163,6 +163,12 @@ Pre-registered assets used by components.
 
 → Full details: `references/resources.md`
 
+## Side Channel
+
+**Node.js only.** Setting `sideChannel: { video: true, audio: true }` on any Node.js input makes Smelter publish decoded RGBA frames and PCM batches on per-input Unix sockets under `SMELTER_SIDE_CHANNEL_SOCKET_DIR`. Consume from a Python sidecar via the `smelter-sdk` package (sync + asyncio) and push results back into the TS app to drive the composition. Add `sideChannel.delayMs` to delay the output and give the consumer a head start to process each frame. The wire format is not stable; `smelter-sdk` is the only supported consumer.
+
+→ Full details and Python API: `references/side-channel.md`
+
 
 ## Patterns & Best Practices
 

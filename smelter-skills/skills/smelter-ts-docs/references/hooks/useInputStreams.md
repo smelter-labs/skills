@@ -15,8 +15,8 @@ A map from `inputId` to `InputStreamInfo`.
 ```tsx
 type InputStreamInfo = {
   inputId: string;
-  videoState?: "ready" | "playing" | "finished";
-  audioState?: "ready" | "playing" | "finished";
+  videoState?: "ready" | "playing" | "paused" | "finished";
+  audioState?: "ready" | "playing" | "paused" | "finished";
   offsetMs?: number;
   videoDurationMs?: number;  // only for inputs that support it (e.g., mp4)
   audioDurationMs?: number;  // only for inputs that support it (e.g., mp4)
@@ -26,8 +26,8 @@ type InputStreamInfo = {
 ### Properties
 
 - **inputId**: ID registered via `smelter.registerInput()`
-- **videoState**: `"ready"` (received, not started), `"playing"`, `"finished"`
-- **audioState**: `"ready"`, `"playing"`, `"finished"`
+- **videoState**: `"ready"` (received, not started), `"playing"`, `"paused"`, `"finished"`
+- **audioState**: `"ready"`, `"playing"`, `"paused"`, `"finished"`
 - **offsetMs**: Timestamp (relative to queue start) when input was added
 - **videoDurationMs**: Total video duration (if available, e.g., MP4)
 - **audioDurationMs**: Total audio duration (if available, e.g., MP4)

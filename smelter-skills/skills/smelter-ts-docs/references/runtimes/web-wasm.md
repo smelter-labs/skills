@@ -146,6 +146,8 @@ Same interface as other runtimes: `registerOutput`, `unregisterOutput`, `registe
 
 > **Note**: `registerWebRenderer` is NOT available in WASM runtime.
 
+> **Note**: In WASM, `registerFont(source)` accepts only a URL string (`FontSource = string`); no `ArrayBuffer` (unlike Node.js).
+
 ### WASM-Specific Shader Limitation
 
 Shaders in WASM accept only ONE texture (`texture_2d<f32>` instead of `binding_array<texture_2d<f32>, 16>`).

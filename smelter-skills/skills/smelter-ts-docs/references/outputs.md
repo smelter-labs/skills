@@ -32,11 +32,9 @@ type RegisterMp4Output = {
 
 **VideoOptions**: `{ resolution: { width, height }; sendEosWhen?: OutputEndCondition; encoder: VideoEncoderOptions }`
 
-**Video Encoders**:
-- `{ type: "ffmpeg_h264"; preset?: "ultrafast"|...|"placebo"; pixelFormat?: "yuv420p"|"yuv422p"|"yuv444p"; ffmpegOptions? }` — default preset: `"fast"`
-- `{ type: "vulkan_h264"; bitrate?: { averageBitrate, maxBitrate } | number }` — hardware, requires Vulkan Video GPU
+**Video Encoders**: `ffmpeg_h264`, `vulkan_h264` only (MP4 cannot carry VP8/VP9); see [Video Encoders](#video-encoders).
 
-**AudioOptions**: `{ channels?: "mono"|"stereo"; mixingStrategy?: "sum_clip"|"sum_scale"; sendEosWhen?; encoder: { type: "aac"; sampleRate?: 8000|16000|24000|44100|48000 } }`
+**AudioOptions**: `{ channels?: "mono"|"stereo"; mixingStrategy?: "sum_clip"|"sum_scale"; sendEosWhen?; encoder: AudioEncoderOptions }`. `aac` only; see [Audio Encoders](#audio-encoders).
 
 ---
 
@@ -55,9 +53,9 @@ type RegisterRtpOutput = {
 }
 ```
 
-**Video Encoders**: `ffmpeg_h264`, `ffmpeg_vp8`, `ffmpeg_vp9`, `vulkan_h264`
+**Video Encoders**: `ffmpeg_h264`, `ffmpeg_vp8`, `ffmpeg_vp9`, `vulkan_h264` — see [Video Encoders](#video-encoders).
 
-**Audio Encoder**: `{ type: "opus"; preset?: "quality"|"voip"|"lowest_latency"; sampleRate?: 8000|16000|24000|48000; forwardErrorCorrection?: boolean; expectedPacketLoss?: 0-100 }`
+**Audio Encoder**: `opus` — see [Audio Encoders](#audio-encoders).
 
 ---
 
@@ -117,6 +115,8 @@ type RegisterWhepServerOutput = {
 }
 ```
 
+Video encoders: `ffmpeg_h264`, `ffmpeg_vp8`, `ffmpeg_vp9`, `vulkan_h264`. Audio encoder: `opus` only.
+
 Smelter exposes endpoint at `http://HOST:9000/whep/<outputId>`.
 
 ---
@@ -125,16 +125,18 @@ Smelter exposes endpoint at `http://HOST:9000/whep/<outputId>`.
 
 Streams to an RTMP server (e.g., YouTube Live, Twitch).
 
+URL format: `rtmp[s]://<host>[:<port>]/<app>/<stream_key>`. Port defaults to `1935` for RTMP and `443` for RTMPS.
+
 ```tsx
 type RegisterRtmpClientOutput = {
   type: "rtmp_client";
-  url: string;  // e.g., "rtmp://example.com/app/streamkey"
+  url: string;
   video?: VideoOptions;
   audio?: AudioOptions;
 }
 ```
 
-Audio encoder: AAC only (`{ type: "aac"; sampleRate? }`).
+Video encoders: `ffmpeg_h264`, plus `ffmpeg_vp8` / `ffmpeg_vp9` / `vulkan_h264`. Audio encoders: `aac`, plus `opus`. VP8, VP9, and Opus require the destination server to support **E-RTMP**; use H.264 + AAC for plain RTMP targets (YouTube, Twitch).
 
 ---
 
@@ -201,18 +203,102 @@ Inputs are "finished" when: TCP connection drops, RTCP BYE received, MP4 track e
 
 ---
 
-## Video Encoder Quick Reference
+## Video Encoders
+
+All FFmpeg encoders share `bitrate` (number or `{ averageBitrate, maxBitrate }`; max defaults to 1.25× average), `keyframeIntervalMs` (default `5000`), and `ffmpegOptions` (raw FFmpeg `Record<string, string>`).
+
+### ffmpeg_h264
+
+```tsx
+type FfmpegH264EncoderOptions = {
+  type: "ffmpeg_h264";
+  bitrate?: number | { averageBitrate: number; maxBitrate: number };
+  keyframeIntervalMs?: number;
+  preset?: "ultrafast" | "superfast" | "veryfast" | "faster" | "fast"
+         | "medium" | "slow" | "slower" | "veryslow" | "placebo";  // default "fast"
+  pixelFormat?: "yuv420p" | "yuv422p" | "yuv444p";  // default "yuv420p"
+  ffmpegOptions?: Record<string, string>;
+};
+```
+
+Bitrate default depends on the underlying encoder: libx264 uses CRF 23; libopenh264 / h264_videotoolbox compute the average from framerate and resolution (≈5000 kb/s at 1080p30). Pixel-format support is also encoder-dependent (libopenh264 / h264_videotoolbox only support `yuv420p`).
+
+### ffmpeg_vp8
+
+```tsx
+type FfmpegVp8EncoderOptions = {
+  type: "ffmpeg_vp8";
+  bitrate?: number | { averageBitrate: number; maxBitrate: number };
+  keyframeIntervalMs?: number;
+  ffmpegOptions?: Record<string, string>;
+};
+```
+
+Default bitrate is computed from framerate and resolution.
+
+### ffmpeg_vp9
+
+```tsx
+type FfmpegVp9EncoderOptions = {
+  type: "ffmpeg_vp9";
+  bitrate?: number | { averageBitrate: number; maxBitrate: number };
+  keyframeIntervalMs?: number;
+  pixelFormat?: "yuv420p" | "yuv422p" | "yuv444p";  // default "yuv420p"
+  ffmpegOptions?: Record<string, string>;
+};
+```
+
+Default bitrate uses constant-quality CRF derived from resolution.
+
+### vulkan_h264 (Required feature: `vk-video`)
+
+Hardware encoder. Requires a GPU supporting Vulkan Video encoding.
+
+```tsx
+type VulkanH264EncoderOptions = {
+  type: "vulkan_h264";
+  bitrate?: number | { averageBitrate: number; maxBitrate: number };
+  keyframeIntervalMs?: number;  // default 5000
+};
+```
+
+Default bitrate is computed from framerate and resolution (≈5000 kb/s average / 6250 kb/s max at 1080p30).
+
+### Quick Reference
 
 | Encoder | Runtimes | Notes |
 |---|---|---|
 | `ffmpeg_h264` | All | Software. Preset controls quality/speed tradeoff. |
-| `ffmpeg_vp8` | Node, Web Client | Software VP8 |
-| `ffmpeg_vp9` | Node, Web Client | Software VP9 |
-| `vulkan_h264` | Node, Web Client | Hardware. Requires Vulkan Video GPU. |
+| `ffmpeg_vp8` | Node, Web Client | Software VP8. |
+| `ffmpeg_vp9` | Node, Web Client | Software VP9. |
+| `vulkan_h264` | Node, Web Client | Hardware. Requires Vulkan Video GPU + `vk-video` feature. |
 
-## Audio Encoder Quick Reference
+## Audio Encoders
+
+### aac
+
+```tsx
+type AacEncoderOptions = {
+  type: "aac";
+  sampleRate?: number;  // default 44100; one of 8000, 16000, 24000, 44100, 48000
+};
+```
+
+### opus
+
+```tsx
+type OpusEncoderOptions = {
+  type: "opus";
+  preset?: "quality" | "voip" | "lowest_latency";  // default "voip"
+  sampleRate?: number;                              // default 48000; one of 8000, 16000, 24000, 48000
+  forwardErrorCorrection?: boolean;                 // default false; see RFC 6716 §2.1.7, §4.2.5
+  expectedPacketLoss?: number;                      // 0-100, default 0; only used when FEC enabled
+};
+```
+
+### Quick Reference
 
 | Encoder | Runtimes | Notes |
 |---|---|---|
-| `aac` | Node, Web Client | Use for MP4, HLS, RTMP |
-| `opus` | Node, Web Client | Use for RTP, WHIP, WHEP |
+| `aac` | Node, Web Client | Use for MP4, HLS, RTMP. |
+| `opus` | Node, Web Client | Use for RTP, WHIP, WHEP, and RTMP over E-RTMP. |

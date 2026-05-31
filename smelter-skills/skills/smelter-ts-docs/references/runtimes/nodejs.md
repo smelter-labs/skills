@@ -142,7 +142,8 @@ Connects to an already-running Smelter server.
 import Smelter, { ExistingInstanceManager } from "@swmansion/smelter-node";
 
 const manager = new ExistingInstanceManager({
-  url: "http://127.0.0.1:8000",  // http → ws, https → wss for WebSocket
+  url: "http://127.0.0.1:8000",       // string | URL; http → ws, https → wss for WebSocket
+  authorizationHeader: "Bearer ...",  // optional; sent on every request to the server
 });
 const smelter = new Smelter(manager);
 ```

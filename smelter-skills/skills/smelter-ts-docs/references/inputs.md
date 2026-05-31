@@ -18,6 +18,7 @@ Inputs are registered via `smelter.registerInput(id, options)`. The `type` field
 - [WHEP Client (WASM)](#whep-client-wasm) — Web WASM only
 - [Return Type: InputHandle](#return-type-inputhandle) — Handle returned from registerInput
 - [Updating Inputs](#updating-inputs) — Pause, resume, seek via handle or low-level API
+- [Side Channel](#side-channel) — Decoded video/audio published over a Unix socket (Node.js only)
 
 ---
 
@@ -37,6 +38,19 @@ Controls which decoder to use:
 - `"ffmpeg_vp8"` / `"ffmpeg_vp9"` — software VP8/VP9 via FFmpeg
 - `"any"` — auto-select any supported decoder
 
+### sideChannel
+Per-track decoded-data feed for an external consumer. Node.js only. See [Side Channel](#side-channel).
+
+```tsx
+type SideChannel = {
+  video?: boolean;    // publish decoded RGBA frames, default false
+  audio?: boolean;    // publish decoded PCM batches,  default false
+  delayMs?: number;   // buffer frames this many ms ahead of the queue, default 0
+};
+```
+
+`delayMs` delays this input's contribution to the output by that many milliseconds, buffering frames ahead so the side-channel consumer receives them early and has roughly that long to process before the frame is due in the composition. See [Side Channel](#side-channel) for the trade-offs.
+
 ---
 
 ## MP4
@@ -55,6 +69,7 @@ type RegisterMp4Input = {
   offsetMs?: number;     // Node.js only
   seekMs?: number;       // Start from specific position (ms). With loop, resets to 0 after first iteration.
   decoderMap?: { h264?: 'ffmpeg_h264' | 'vulkan_h264' };
+  sideChannel?: SideChannel;  // Node.js only — see Side Channel section
 }
 ```
 
@@ -75,6 +90,8 @@ type RegisterRtpInput = {
   audio?: { decoder: "opus" } | { decoder: "aac"; audioSpecificConfig: string; rtpMode?: "low_bitrate" | "high_bitrate" };
   required?: boolean;
   offsetMs?: number;
+  bufferSizeMs?: number;       // jitter buffer size; higher = more latency, more resilience
+  sideChannel?: SideChannel;   // Node.js only
 }
 ```
 
@@ -99,6 +116,7 @@ type RegisterHlsInput = {
   required?: boolean;
   offsetMs?: number;
   decoderMap?: { h264?: 'ffmpeg_h264' | 'vulkan_h264' };
+  sideChannel?: SideChannel;  // Node.js only
 }
 ```
 
@@ -112,13 +130,14 @@ Provides a WHIP server endpoint for incoming WebRTC streams. Smelter listens on 
 type RegisterWhipServerInput = {
   type: "whip_server";
   video?: { decoderPreferences?: ("ffmpeg_h264" | "vulkan_h264" | "ffmpeg_vp8" | "ffmpeg_vp9" | "any")[] };
-  bearerToken?: string;  // auto-generated if omitted
+  bearerToken?: string;        // auto-generated if omitted
   required?: boolean;
-  offsetMs?: number;
+  bufferSizeMs?: number;       // min/initial jitter buffer; buffer grows adaptively with observed jitter
+  sideChannel?: SideChannel;   // Node.js only
 }
 ```
 
-After registration, connect to `http://localhost:9000/whip/<inputId>`.
+After registration, connect to `http://localhost:9000/whip/<inputId>`. Complies with [draft-ietf-wish-whip-01](https://datatracker.ietf.org/doc/html/draft-ietf-wish-whip-01).
 
 ---
 
@@ -133,15 +152,20 @@ type RegisterWhepClientInput = {
   bearerToken?: string;
   video?: { decoderPreferences?: ("ffmpeg_h264" | "vulkan_h264" | "ffmpeg_vp8" | "ffmpeg_vp9" | "any")[] };
   required?: boolean;
-  offsetMs?: number;
+  bufferSizeMs?: number;       // min/initial jitter buffer; grows adaptively
+  sideChannel?: SideChannel;   // Node.js only
 }
 ```
+
+Complies with [draft-ietf-wish-whep-02](https://datatracker.ietf.org/doc/html/draft-ietf-wish-whep-02).
 
 ---
 
 ## RTMP Server
 
 Receives RTMP/RTMPS streams. Smelter exposes an RTMP endpoint after registration. Push from OBS, FFmpeg, or any RTMP broadcaster.
+
+Supported codecs: H.264 video and AAC audio; VP8/VP9 video and Opus audio are additionally supported via **E-RTMP** (the broadcaster must speak E-RTMP). `decoderMap` only configures the H264 decoder.
 
 Connection URL format: `rtmp[s]://<smelter_ip>:<port>/<app>/<stream_key>`
 
@@ -150,11 +174,11 @@ Port defaults to `1935`, configurable via `SMELTER_RTMP_SERVER_PORT`. For RTMPS,
 ```tsx
 type RegisterRtmpServerInput = {
   type: "rtmp_server";
-  app: string;
-  streamKey: string;
+  app: string;        // first URL path segment Smelter listens on
+  streamKey: string;  // second URL path segment
   required?: boolean;
-  offsetMs?: number;
   decoderMap?: { h264?: 'ffmpeg_h264' | 'vulkan_h264' };
+  sideChannel?: SideChannel;  // Node.js only
 }
 ```
 
@@ -175,6 +199,7 @@ type RegisterV4l2Input = {
   };
   framerate: number | string; // number or "NUM/DEN" fraction
   required?: boolean;
+  sideChannel?: SideChannel;  // Node.js only
 }
 ```
 
@@ -277,3 +302,21 @@ interface UpdateInputRequest {
   seek_ms?: number;   // Seek to position in ms (MP4 only)
 }
 ```
+
+---
+
+## Side Channel
+
+Node.js only. When an input is registered with `sideChannel`, Smelter publishes decoded RGBA frames and/or PCM audio batches to per-input Unix sockets created under `SMELTER_SIDE_CHANNEL_SOCKET_DIR`. Sockets are named `video_<input_id>.sock` and `audio_<input_id>.sock`.
+
+```tsx
+type SideChannel = {
+  video?: boolean;    // publish decoded RGBA frames, default false
+  audio?: boolean;    // publish decoded PCM batches,  default false
+  delayMs?: number;   // buffer frames this many ms ahead of the queue, default 0
+};
+```
+
+Read-only: side channel does not push media into Smelter. To act on results, update React state in the Smelter app so the JSX composition re-renders.
+
+The wire format is not stable. Consume side-channel data via the official `smelter-sdk` Python package (sync + asyncio API). Run the consumer as a sidecar process; export the same `SMELTER_SIDE_CHANNEL_SOCKET_DIR` to both processes.
