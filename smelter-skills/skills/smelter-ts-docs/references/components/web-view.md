@@ -36,7 +36,7 @@ await smelter.registerWebRenderer("example_web_renderer", {
 ```tsx
 type WebViewProps = {
   id?: string;
-  children?: ReactElement[];
+  children?: ReactNode;
   instanceId: string;
 };
 ```
@@ -51,7 +51,7 @@ ID of a web renderer instance registered with `Smelter.registerWebRenderer`.
 
 ### children
 Content to display within the `WebView`.
-- **Type**: `ReactElement[]`
+- **Type**: `ReactNode`
 
 ---
 

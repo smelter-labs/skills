@@ -72,7 +72,7 @@ await smelter.registerShader("example_shader", { source: EXAMPLE_SHADER });
 ```tsx
 type ShaderProps = {
   id?: string;
-  children?: ReactElement[];
+  children?: ReactNode;
   shaderId: string;
   shaderParam?: ShaderParam;
   resolution: {
@@ -92,7 +92,7 @@ ID of a shader registered with `Smelter.registerShader`.
 
 ### children
 Child components to transform; available as textures inside the shader.
-- **Type**: `ReactElement[]`
+- **Type**: `ReactNode`
 
 ---
 
