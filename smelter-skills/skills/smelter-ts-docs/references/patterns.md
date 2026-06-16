@@ -63,9 +63,11 @@ Key points:
   `whip_client`, `mp4` (see `./outputs/*.md`). For `mp4`, you must
   `await smelter.unregisterOutput("output")` to flush metadata, or the file is corrupt.
 
-Offline / batch rendering: instead of the live `Smelter`, use `SmelterOffline` (see
+Offline / batch rendering: instead of the live `Smelter`, use `OfflineSmelter` (see
 `./runtimes/nodejs.md`) to render a finite composition to a file without real-time
-playback. Same component model; you schedule scenes against a timeline and `render()`.
+playback. Same component model, simplified API: after `init()` and registering inputs,
+call `await smelter.render(<Scene/>, output, durationMs?)` — the scene and the single
+output are passed directly to `render()` (no separate `registerOutput`/`start`).
 
 ## Layout sizing rules (the foundation for every layout recipe)
 

@@ -2,9 +2,11 @@
 
 Renders a website using a Chromium engine embedded inside the Smelter instance. Register the renderer first with `Smelter.registerWebRenderer` using a matching `instanceId`.
 
-**Availability:** Node.js · Browser (Client) · Browser (WASM)
+**Availability:** Node.js · Browser (Client)
 
-Requires the `web-renderer` feature to be enabled on the Smelter server.
+Requires the `web-renderer` feature to be enabled on the Smelter server, and a web
+renderer registered via `registerWebRenderer` — which the Browser (WASM) runtime does
+not provide, so `WebView` is unavailable there.
 
 > ⚠️ **Caution:** Only one component can use a given `instanceId` at a time.
 

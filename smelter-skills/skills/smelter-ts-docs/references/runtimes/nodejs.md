@@ -16,13 +16,9 @@ Two modes:
 
 ## Compatibility
 
-| SDK version | Smelter server version | React version |
-|---|---|---|
-| `v0.2.0`, `v0.2.1` | `v0.4.0`, `v0.4.1` | Recommended `18.3.1`; any react compatible with `react-reconciler@0.29.2` |
-| `v0.3.0` | `v0.5.0` | Recommended `18.3.1`; any react compatible with `react-reconciler@0.29.2` |
-| `v0.4.0` | `v0.6.0` | Recommended `18.3.1`; any react compatible with `react-reconciler@0.29.2` |
-
-The underlying Smelter server has its own deployment requirements (Docker / binaries).
+Targets SDK **v0.4.0**, which pairs with Smelter server **v0.6.0** and React **18.3.1**
+(any React compatible with `react-reconciler@0.29.2`). The underlying server has its own
+deployment requirements (Docker / binaries).
 
 ---
 

@@ -14,13 +14,9 @@ npm install @swmansion/smelter @swmansion/smelter-web-wasm react
 
 ## Compatibility
 
-| SDK version | Supported browsers | React version |
-|---|---|---|
-| `v0.2.0`, `v0.2.1` | Google Chrome / Chromium-based browsers | Recommended `18.3.1`; any react compatible with `react-reconciler@0.29.2` |
-| `v0.3.0` | Google Chrome / Chromium-based browsers | Recommended `18.3.1`; any react compatible with `react-reconciler@0.29.2` |
-| `v0.4.0` | Google Chrome / Chromium-based browsers | Recommended `18.3.1`; any react compatible with `react-reconciler@0.29.2` |
-
-There is no separate Smelter server version — the engine is the WASM bundle.
+Targets SDK **v0.4.0**. Runs in Google Chrome / Chromium-based browsers only. React
+**18.3.1** recommended (any React compatible with `react-reconciler@0.29.2`). There is
+no separate Smelter server version — the engine is the WASM bundle.
 
 ---
 

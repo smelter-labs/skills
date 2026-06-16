@@ -23,10 +23,10 @@ The underlying Unix-socket wire format is **not stable** and is not documented f
 The side channel is configured entirely through the `sideChannel` field on the input config passed to `registerInput`. It is supported by **every Node.js input type** (see each input's reference page).
 
 ```tsx
-type SideChannelConfig = {
+type SideChannel = {
   video?: boolean;   // enable the decoded RGBA video socket (default: false)
   audio?: boolean;   // enable the decoded PCM audio socket (default: false)
-  delayMs?: number;  // buffer frames this many ms ahead of the queue (optional)
+  delayMs?: number;  // buffer frames this many ms ahead of the queue (default: 0)
 };
 ```
 
