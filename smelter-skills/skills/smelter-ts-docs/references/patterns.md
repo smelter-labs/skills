@@ -1,238 +1,317 @@
-# Patterns & Best Practices
+# Patterns & recipes
 
-Real-world patterns for building Smelter applications, derived from production projects.
+How to assemble a working Smelter app with the TypeScript SDK. Each recipe is a
+copy-pasteable starting point. For per-component props see `./components/*.md`,
+per-input/output config see `./inputs/*.md` and `./outputs/*.md`, runtimes see
+`./runtimes/*.md`.
 
-## Table of Contents
+## Basic app skeleton (Node.js)
 
-- [Shader Wrapping / Chaining](#shader-wrapping--chaining)
-- [Input State Rendering](#input-state-rendering)
-- [Animations via Timers](#animations-via-timers)
-- [Shader Color Parameters](#shader-color-parameters)
-- [Multi-Output with Shared Store](#multi-output-with-shared-store)
-- [Scrolling Text](#scrolling-text)
-
----
-
-## Shader Wrapping / Chaining
-
-Apply multiple shaders by recursively nesting `<Shader>` components. Each shader wraps the output of the previous one.
+The flow is always: create + `init()` → register inputs → register output with a
+scene (a React component) → `start()`.
 
 ```tsx
-function wrapWithShaders(
-  component: ReactElement,
-  shaders: ShaderConfig[],
-  resolution: { width: number; height: number },
-  index?: number,
-): ReactElement {
-  const currentIndex = index ?? shaders.length - 1;
-  if (currentIndex < 0 || shaders.length === 0) {
-    return component;
-  }
-  const shader = shaders[currentIndex];
+import { Tiles, InputStream } from "@swmansion/smelter";
+import Smelter from "@swmansion/smelter-node";
 
+function App() {
   return (
-    <Shader
-      shaderId={shader.shaderId}
-      resolution={resolution}
-      shaderParam={buildShaderParams(shader)}>
-      {wrapWithShaders(component, shaders, resolution, currentIndex - 1)}
-    </Shader>
+    <Tiles style={{ backgroundColor: "#4d4d4d" }}>
+      <InputStream inputId="input_1" volume={0.9} />
+      <InputStream inputId="input_2" />
+    </Tiles>
   );
 }
 
-// Usage: wrap an input with all its active shaders
-const rendered = wrapWithShaders(
-  <InputStream inputId="cam1" />,
-  activeShaders,
-  { width: 1920, height: 1080 }
-);
+async function start() {
+  const smelter = new Smelter();
+  await smelter.init(); // downloads binaries and starts a local server
+
+  await smelter.registerInput("input_1", { type: "mp4", serverPath: "input1.mp4" });
+  await smelter.registerInput("input_2", { type: "mp4", serverPath: "input2.mp4" });
+
+  await smelter.registerOutput("output", <App />, {
+    type: "rtmp_client",
+    url: "rtmp://127.0.0.1:8002",
+    video: {
+      resolution: { width: 1280, height: 720 },
+      encoder: { type: "ffmpeg_h264" },
+    },
+    audio: {
+      channels: "stereo",
+      encoder: { type: "aac" },
+    },
+  });
+
+  await smelter.start();
+}
 ```
 
-**Key points:**
-- Shaders nest inside-out: last shader in the array is the outermost wrapper
-- Each `<Shader>` needs an explicit `resolution`
-- Filter for enabled shaders before wrapping
+Key points:
+- `init()` downloads binaries and runs a local server. To attach to an already-running
+  server instead, pass an `ExistingInstanceManager`:
+  ```tsx
+  import Smelter, { ExistingInstanceManager } from "@swmansion/smelter-node";
+  const smelter = new Smelter(new ExistingInstanceManager({ url: "http://127.0.0.1:8000" }));
+  ```
+- `start()` makes all registered outputs begin producing frames. All user-facing
+  timestamps/offsets are relative to this call. Register inputs/outputs before calling it.
+- Inputs you register but don't reference in the scene are simply not rendered.
+- `volume` on `InputStream` (0–1) scales that source's audio; audio from all rendered
+  inputs is mixed. Video is **not** auto-rescaled to the output — use `Rescaler` (below).
+- Output protocol is just the config object's `type`. Other options: `rtp_stream`,
+  `whip_client`, `mp4` (see `./outputs/*.md`). For `mp4`, you must
+  `await smelter.unregisterOutput("output")` to flush metadata, or the file is corrupt.
 
----
+Offline / batch rendering: instead of the live `Smelter`, use `OfflineSmelter` (see
+`./runtimes/nodejs.md`) to render a finite composition to a file without real-time
+playback. Same component model, simplified API: after `init()` and registering inputs,
+call `await smelter.render(<Scene/>, output, durationMs?)` — the scene and the single
+output are passed directly to `render()` (no separate `registerOutput`/`start`).
 
-## Input State Rendering
+## Layout sizing rules (the foundation for every layout recipe)
 
-Use `useInputStreams()` to conditionally render based on input state (loading spinner, offline text, or live content).
+Size resolution for layout components (`View`, `Tiles`, `Rescaler`):
+- Explicit `width`/`height` always win.
+- **Root** component → sized from the output resolution.
+- **Statically positioned child** of a layout component → fills the area its parent
+  gives it, unless explicitly sized. (`View` splits space evenly among static children.)
+- **Absolutely positioned child** (any of `top`/`bottom`/`left`/`right` set) → same size
+  as parent unless explicitly sized; rendered on top and ignored by sibling layout.
+- **Child of a non-layout component** (`Shader`, `WebView`) → size is **required**.
+
+Practical: don't size the root `View`; the output already defines it. When nesting, you
+usually set only `width` *or* `height`, or nothing.
+
+## Fill / fit a source into a region — Rescaler
+
+When you want a source to fit a region instead of being cropped to the output. A bare
+`InputStream` is drawn at native resolution (e.g. a 1920x1080 source on a 1280x720
+output shows only a cropped portion). Wrap it in `Rescaler`:
 
 ```tsx
-function Input({ inputId }: { inputId: string }) {
-  const streams = useInputStreams();
-  const streamState = streams[inputId]?.videoState ?? 'finished';
-
+function App() {
   return (
-    <Rescaler style={{ width: 1920, height: 1080 }}>
-      {streamState === 'playing' ? (
-        <InputStream inputId={inputId} />
-      ) : streamState === 'ready' ? (
-        <View style={{ padding: 300 }}>
-          <Rescaler style={{ rescaleMode: 'fit' }}>
-            <Image imageId="spinner" />
-          </Rescaler>
-        </View>
-      ) : (
-        <View style={{ padding: 300 }}>
-          <Text style={{ fontSize: 48 }}>Stream offline</Text>
-        </View>
-      )}
-    </Rescaler>
+    <View style={{ backgroundColor: "#4d4d4d" }}>
+      <Rescaler>
+        <InputStream inputId="input_1" />
+      </Rescaler>
+    </View>
   );
 }
 ```
 
-**Key points:**
-- `videoState` transitions: `undefined` → `"ready"` → `"playing"` → `"finished"`
-- For non-stream inputs (images, text, game), skip the stream check and treat as `"playing"`
-- Always wrap in `<Rescaler>` for consistent sizing
+The `Rescaler` (only static child of root `View`) takes the full output size and scales
+the input to fit, preserving aspect ratio (letterboxed/centered if it doesn't match).
+See `./components/rescaler.md` for fit-vs-fill mode.
 
----
+## Side-by-side / split — View with multiple children
 
-## Animations via Timers
-
-Smelter has no built-in animation system beyond `transition` on layout changes. For continuous animations (marquee, fade, swap transitions), use `setInterval` + React state.
+When you want two (or N) sources splitting the frame evenly. `View` lays static children
+out in a row (default) or column, splitting space equally:
 
 ```tsx
-function useSwapAnimation(durationMs: number): { progress: number; isAnimating: boolean } {
-  const [progress, setProgress] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const startAnimation = useCallback(() => {
-    setIsAnimating(true);
-    const startTime = Date.now();
-
-    const timer = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const t = Math.min(1, elapsed / durationMs);
-      // Cubic ease-in-out
-      const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-
-      if (t >= 1) {
-        clearInterval(timer);
-        setProgress(1);
-        setIsAnimating(false);
-      } else {
-        setProgress(eased);
-      }
-    }, 16); // ~60fps
-  }, [durationMs]);
-
-  return { progress, isAnimating };
-}
-```
-
-**Key points:**
-- Use 16ms interval (~60fps) for smooth animation
-- Apply easing functions (cubic ease-in-out is common)
-- Always cleanup intervals in useEffect return or when animation completes
-- Use `useRef` to track previous state and detect changes (e.g., primary input swap)
-
----
-
-## Shader Color Parameters
-
-WGSL shaders expect color as separate `f32` fields (`_r`, `_g`, `_b`), not a single hex string. Convert hex → RGB floats when building shader params.
-
-```tsx
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const clean = hex.replace('#', '');
-  const full = clean.length === 3
-    ? clean.split('').map(c => c + c).join('')
-    : clean;
-  return {
-    r: parseInt(full.substring(0, 2), 16) / 255,
-    g: parseInt(full.substring(2, 4), 16) / 255,
-    b: parseInt(full.substring(4, 6), 16) / 255,
-  };
-}
-
-// Building shader params with a color field:
-const rgb = hexToRgb('#ff4400');
-const shaderParam = {
-  type: 'struct' as const,
-  value: [
-    { type: 'f32' as const, fieldName: 'effect_color_r', value: rgb.r },
-    { type: 'f32' as const, fieldName: 'effect_color_g', value: rgb.g },
-    { type: 'f32' as const, fieldName: 'effect_color_b', value: rgb.b },
-    { type: 'f32' as const, fieldName: 'intensity', value: 0.7 },
-  ],
-};
-```
-
-**Key points:**
-- WGSL has no string type — colors must be split into per-channel `f32` values (0.0–1.0)
-- Convention: name fields `<param>_r`, `<param>_g`, `<param>_b`
-- The `ShaderParamStructField` uses `fieldName` (camelCase), NOT `field_name`
-
----
-
-## Multi-Output with Shared Store
-
-Use the same Zustand store for multiple outputs (e.g., live WHEP stream + MP4 recording) so they render identically.
-
-```tsx
-// Register live output
-const store = createRoomStore();
-await smelter.registerOutput("room_live", <App store={store} />, {
-  type: "whep_server",
-  video: { encoder: { type: "ffmpeg_h264" }, resolution: { width: 1920, height: 1080 } },
-  audio: { encoder: { type: "opus" } },
-});
-
-// Register recording output — reuses the same store
-await smelter.registerOutput("room_recording", <App store={store} />, {
-  type: "mp4",
-  serverPath: "./recording.mp4",
-  video: { encoder: { type: "ffmpeg_h264", preset: "fast" }, resolution: { width: 1920, height: 1080 } },
-  audio: { encoder: { type: "aac", channels: "stereo" } },
-});
-```
-
-**Key points:**
-- Both outputs share the same React tree and store — any state change affects both
-- Use appropriate encoders per output type: `opus` for WebRTC, `aac` for MP4/RTMP
-- Unregister the recording output independently when done
-
----
-
-## Scrolling Text
-
-Smelter has no built-in scrolling. Implement marquee/ticker by animating a `<View>` position with `setInterval`.
-
-```tsx
-function ScrollingText({ text, speed, containerWidth, containerHeight, fontSize }: Props) {
-  const lineHeight = fontSize * 1.2;
-  const [scrollOffset, setScrollOffset] = useState(containerHeight);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setScrollOffset(prev => {
-        const next = prev - speed * (16 / 1000);
-        // Reset when text scrolls fully past
-        if (next < -totalTextHeight) return containerHeight;
-        return next;
-      });
-    }, 16);
-    return () => clearInterval(timer);
-  }, [speed, containerHeight]);
-
+function App() {
   return (
-    <View style={{ width: containerWidth, height: containerHeight, overflow: 'hidden' }}>
-      <View style={{ width: containerWidth, top: scrollOffset, left: 0 }}>
-        <Text style={{ fontSize, lineHeight, width: containerWidth, wrap: 'word' }}>
-          {text}
-        </Text>
+    <View style={{ backgroundColor: "#4d4d4d" }}>
+      <Rescaler>
+        <InputStream inputId="input_1" />
+      </Rescaler>
+      <Rescaler>
+        <InputStream inputId="input_2" />
+      </Rescaler>
+    </View>
+  );
+}
+```
+
+Two children of a 1280x720 root `View` each get 640x720; each `Rescaler` fits its input
+into that box. Use `style={{ direction: "column" }}` on the `View` to stack vertically
+instead of side-by-side.
+
+## Grid / auto-layout — Tiles
+
+When you want a video-call style grid that packs N sources efficiently without manual
+sizing. `Tiles` arranges children into the most space-efficient grid automatically:
+
+```tsx
+function App() {
+  return (
+    <Tiles style={{ backgroundColor: "#4d4d4d" }}>
+      <InputStream inputId="input_1" />
+      <InputStream inputId="input_2" />
+      <InputStream inputId="input_3" />
+    </Tiles>
+  );
+}
+```
+
+`Tiles` does not support absolute positioning. See `./components/tiles.md`.
+
+## Picture-in-picture / corner overlay
+
+When you want one source full-frame and another in a corner. Give the overlay `Rescaler`
+an explicit size plus absolute positioning (`top`/`right`/etc.). Absolutely positioned
+children render on top and don't affect the layout of static siblings:
+
+```tsx
+function App() {
+  return (
+    <View style={{ backgroundColor: "#4d4d4d" }}>
+      <Rescaler>
+        <InputStream inputId="input_1" /> {/* fills the frame */}
+      </Rescaler>
+      <Rescaler style={{ width: 320, height: 180, top: 20, right: 20 }}>
+        <InputStream inputId="input_2" /> {/* pinned top-right */}
+      </Rescaler>
+    </View>
+  );
+}
+```
+
+## Overlays — lower-third / text-over-video
+
+When you want text or a graphic layered over video. Same trick: an absolutely positioned
+child `View` over the video content. Use a `backgroundColor` with an alpha channel
+(8-digit hex, e.g. `"#00000080"` = 50% black) for a readable semi-transparent banner.
+
+```tsx
+function App() {
+  return (
+    <View>
+      <Rescaler>
+        <InputStream inputId="input_1" />
+      </Rescaler>
+      {/* lower third */}
+      <View
+        style={{
+          height: 80,
+          bottom: 40,
+          left: 60,
+          right: 60,
+          backgroundColor: "#00000080",
+          padding: 16,
+        }}
+      >
+        <Text style={{ fontSize: 36, color: "#FFFFFF" }}>Jane Doe — Host</Text>
       </View>
     </View>
   );
 }
 ```
 
-**Key points:**
-- Outer `<View>` with `overflow: 'hidden'` acts as the viewport
-- Inner `<View>` is absolutely positioned (via `top`) and animated
-- Speed is in pixels-per-second; convert in the interval: `speed * (intervalMs / 1000)`
-- For horizontal marquee, animate `left` instead of `top`
+The overlay `View` sets `bottom`/`left`/`right` (absolute) so it ignores sibling layout
+and floats over the video. The alpha in `backgroundColor` keeps the video partly visible
+behind the text. For text-over-video, drop the background and just absolutely position a
+`Text`. See `./components/view.md` and the `Text` component reference.
+
+## Transitions / animation
+
+When you want a property change to animate instead of snapping. `View` and `Rescaler`
+animate their children automatically as long as a `transition` field is set: when the
+scene re-renders with a new value (e.g. a different `width`), the component interpolates
+from the old state to the new one over `durationMs`.
+
+```tsx
+function App() {
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setExpanded(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <View style={{ backgroundColor: "#4d4d4d" }}>
+      <Rescaler
+        style={{ width: expanded ? 1280 : 480 }}
+        transition={{ durationMs: 2000 }}
+      >
+        <InputStream inputId="input_1" />
+      </Rescaler>
+    </View>
+  );
+}
+```
+
+Key points:
+- Animation is driven by re-rendering with changed style. Trigger it with normal React
+  state (`useState` + `useEffect`/timers), or with Smelter hooks like
+  `useAfterTimestamp` (see `./hooks/use-after-timestamp.md`).
+- Sibling layout adjusts automatically: if one of two `Rescaler` siblings animates its
+  width, the other reflows to match.
+- Easing via `transition.easingFunction`. Default is `"linear"`. Also `"bounce"`, or a
+  cubic bezier:
+  ```tsx
+  transition={{
+    durationMs: 2000,
+    easingFunction: { functionName: "cubic_bezier", points: [0.65, 0, 0.35, 1] },
+  }}
+  ```
+
+Note: components are matched across scene updates by their `id` (or stable position in
+the tree). Keep a component's identity stable so Smelter knows which old state to
+animate from.
+
+## Dynamic composition — add/remove inputs at runtime
+
+When you want to change what's on screen while running. The scene is a live React tree:
+register/unregister inputs with the `Smelter` API and update state to re-render the
+scene. No need to re-register the output.
+
+```tsx
+function App({ inputIds }: { inputIds: string[] }) {
+  return (
+    <Tiles style={{ backgroundColor: "#4d4d4d" }}>
+      {inputIds.map((id) => (
+        <InputStream key={id} inputId={id} />
+      ))}
+    </Tiles>
+  );
+}
+
+// Outside the component, driving the changes:
+await smelter.registerInput("input_3", { type: "mp4", serverPath: "input3.mp4" });
+// then update whatever state feeds `inputIds` so <App /> re-renders with input_3.
+
+// Later, drop it:
+await smelter.unregisterInput("input_3");
+// and remove it from the rendered list.
+```
+
+The `useInputStreams` hook gives you the set of connected inputs reactively if you want
+the scene to follow registrations automatically (see `./hooks/use-input-streams.md`).
+Re-rendering with a `transition` (above) makes the appearance/disappearance animate.
+
+## Web rendering (Node.js only, experimental)
+
+When you want to render a live website into the composition, optionally with input
+streams embedded into HTML elements. Requires a Smelter build with web renderer support
+and `SMELTER_WEB_RENDERER_ENABLE=true` on the server.
+
+```tsx
+// 1. Register a web renderer instance.
+await smelter.registerWebRenderer("example_website", {
+  url: "https://example.com",
+  resolution: { width: 1920, height: 1080 },
+  embeddingMethod: "native_embedding_over_content",
+});
+
+// 2. Use it via a WebView whose instanceId matches.
+function App() {
+  return (
+    <WebView instanceId="example_website">
+      {/* 3. (optional) embed an input into an HTML element by matching id */}
+      <InputStream id="my_video" inputId="input_1" />
+    </WebView>
+  );
+}
+```
+
+Key points:
+- The child component's `id` must match the HTML element id on the page where it's embedded.
+- `embeddingMethod`: prefer `native_embedding_over_content` (over page content) or
+  `native_embedding_under_content` (under content; page needs a transparent background).
+  `chromium_embedding` draws into HTML canvases but costs an extra copy per input frame
+  and hurts performance with many inputs.
+- Only one `WebView` may use a given renderer instance at a time.
+- See `./resources/web-renderer.md` for the full registration config.

@@ -1,35 +1,44 @@
-# Node.js Runtime — @swmansion/smelter-node
+# Node.js runtime (`@swmansion/smelter-node`)
 
-Controls a Smelter server from a Node.js process. React code runs in Node.js; updates are transmitted to the Smelter server via HTTP.
+Controls a Smelter server from a Node.js process. Your React code runs in Node.js; React tree updates are sent to the Smelter server as layout updates over HTTP. By default the server binary is downloaded and spawned locally on the same machine, but you can also connect to an independently deployed instance.
 
-## Table of Contents
+**Install:**
 
-- [Installation](#installation)
-- [Smelter (Live Processing)](#smelter-live-processing) — Dynamic, real-time scenarios
-- [OfflineSmelter (Offline Processing)](#offlinesmelter-offline-processing) — Static file processing
-- [SmelterManager](#smeltermanager) — Server connection management
-- [Compatibility](#compatibility)
+```sh
+npm install @swmansion/smelter @swmansion/smelter-node react
+```
+
+`@swmansion/smelter` provides components/hooks/inputs/outputs types; `@swmansion/smelter-node` provides the runtime. React `18.3.1` recommended.
+
+Two modes:
+- **Live processing** — `Smelter` class. Dynamically add/remove inputs/outputs at any time. Media processed in real time by default (affected by required inputs / global settings).
+- **Offline processing** — `OfflineSmelter` class. Combine static files into a single output. Restricted API: all inputs defined before render, exactly one output. Frames produced as fast as possible.
+
+## Compatibility
+
+Targets SDK **v0.4.0**, which pairs with Smelter server **v0.6.0** and React **18.3.1**
+(any React compatible with `react-reconciler@0.29.2`). The underlying server has its own
+deployment requirements (Docker / binaries).
 
 ---
 
-## Installation
+## `Smelter` class (live)
 
-```bash
-npm install @swmansion/smelter-node @swmansion/smelter
+```tsx
+import Smelter from "@swmansion/smelter-node"
 ```
 
-## Smelter (Live Processing)
-
-For dynamic, real-time scenarios. Supports adding/removing inputs and outputs at any time.
+Lifecycle: `new Smelter()` → `await init()` → (optionally register resources) → `await start()` → (optionally register more) → `await terminate()`.
 
 ```tsx
 import Smelter from "@swmansion/smelter-node";
+import { View } from "@swmansion/smelter";
 
 async function run() {
-  const smelter = new Smelter();  // default: LocallySpawnedInstanceManager
+  const smelter = new Smelter();
   await smelter.init();
 
-  await smelter.registerOutput("out", <MyScene />, {
+  await smelter.registerOutput("example", <View />, {
     type: "rtmp_client",
     url: "rtmp://example.com/app/stream_key",
     video: {
@@ -40,59 +49,137 @@ async function run() {
   });
 
   await smelter.start();
-  // Can register more inputs/outputs after start
+  // additional inputs/outputs can be registered at any point
 }
 void run();
 ```
 
-### Lifecycle
+### Constructor
 
-1. `new Smelter(manager?)` — create instance
-2. `await smelter.init()` — spawn/connect server
-3. Register inputs/outputs/resources (optional before start)
-4. `await smelter.start()` — begin producing streams
-5. Register more inputs/outputs as needed
-6. `await smelter.terminate()` — shut down
+```tsx
+new Smelter(manager?: SmelterManager)
+```
 
-> **Note**: Steps 3 and 4 are flexible. You can call `init()` → `start()` immediately, then register inputs/outputs afterwards. This is a common pattern in live production apps where inputs are added dynamically via API calls.
+- `manager` — how the client connects to / manages the server. Defaults to `LocallySpawnedInstanceManager`. See [Instance managers](#instance-managers).
 
-### Key Methods
+### Methods
 
-| Method | Description |
-|---|---|
-| `registerOutput(id, root, options)` | Register an output stream with React root |
-| `unregisterOutput(id)` | Stop and remove an output |
-| `registerInput(id, options)` | Register an input stream |
-| `unregisterInput(id)` | Remove an input |
-| `registerImage(id, options)` | Register image asset |
-| `registerShader(id, options)` | Register WGSL shader |
-| `registerWebRenderer(id, options)` | Register web renderer instance |
-| `registerFont(source)` | Register font (URL or ArrayBuffer) |
+```tsx
+// Initialize: spawn a new instance or connect to an existing one.
+// No output is produced until start() is called.
+init(): Promise<void>
 
-### Supported Outputs (Node.js)
+// Start the processing pipeline; registered outputs begin producing streams.
+start(): Promise<void>
 
-`rtp_stream`, `mp4`, `hls`, `whip_client`, `whep_server`, `rtmp_client`
+// Register an output destination. Returns server response.
+registerOutput(outputId: string, root: React.ReactElement, output: RegisterOutput): Promise<object>
+unregisterOutput(outputId: string): Promise<void>
 
-### Supported Inputs (Node.js)
+// Register an input source. Returns a handle for controlling the input.
+registerInput(inputId: string, input: RegisterInput): Promise<InputHandle>
+unregisterInput(inputId: string): Promise<void>
 
-`rtp_stream`, `mp4`, `hls`, `whip_server`, `whep_client`, `rtmp_server`
+// Register/unregister resources (Renderers.* types from @swmansion/smelter).
+registerImage(imageId: string, image: Renderers.RegisterImage): Promise<void>
+unregisterImage(imageId: string): Promise<void>
+registerShader(shaderId: string, shader: Renderers.RegisterShader): Promise<void>
+unregisterShader(shaderId: string): Promise<void>
+registerWebRenderer(instanceId: string, instance: Renderers.RegisterWebRenderer): Promise<object>
+unregisterWebRenderer(instanceId: string): Promise<void>
+
+// Register a font usable by the <Text> component.
+registerFont(source: FontSource): Promise<void>  // FontSource = string (URL) | ArrayBuffer
+
+// Tear down: may drop the connection or shut down the server depending on the manager.
+terminate(): Promise<void>
+```
+
+> Note: `registerOutput` takes the React root as its second argument (`(outputId, root, output)`), unlike the server HTTP API.
+
+### Supported outputs
+
+`RegisterOutput` is a discriminated union on `type`:
+
+```tsx
+type RegisterOutput =
+  | ({ type: 'rtp_stream' } & RegisterRtpOutput)
+  | ({ type: 'mp4' } & RegisterMp4Output)
+  | ({ type: 'hls' } & RegisterHlsOutput)
+  | ({ type: 'whip_client' } & RegisterWhipClientOutput)
+  | ({ type: 'whep_server' } & RegisterWhepServerOutput)
+  | ({ type: 'rtmp_client' } & RegisterRtmpClientOutput);
+```
+
+- `../outputs/rtp.md`
+- `../outputs/mp4.md`
+- `../outputs/hls.md`
+- `../outputs/whip.md` (WHIP client)
+- `../outputs/whep.md` (WHEP server)
+- `../outputs/rtmp.md` (RTMP client)
+
+### Supported inputs
+
+`RegisterInput` is a discriminated union on `type`:
+
+```tsx
+type RegisterInput =
+  | ({ type: 'rtp_stream' } & RegisterRtpInput)
+  | ({ type: 'mp4' } & RegisterMp4Input)
+  | ({ type: 'hls' } & RegisterHlsInput)
+  | ({ type: 'whip_server' } & RegisterWhipServerInput)
+  | ({ type: 'whep_client' } & RegisterWhepClientInput)
+  | ({ type: 'rtmp_server' } & RegisterRtmpServerInput);
+```
+
+- `../inputs/rtp.md`
+- `../inputs/mp4.md`
+- `../inputs/hls.md`
+- `../inputs/whip.md` (WHIP server)
+- `../inputs/whep.md` (WHEP client)
+- `../inputs/rtmp.md` (RTMP server)
+
+### Input handles
+
+`registerInput` returns an `InputHandle` for controlling the input afterward. MP4 inputs return an `Mp4InputHandle` (adds seeking); WHIP server inputs return a `WhipInputHandle` (exposes endpoint URL and bearer token).
+
+```tsx
+class InputHandle {
+  get videoDurationMs(): number | undefined;  // video track length, if available
+  get audioDurationMs(): number | undefined;  // audio track length, if available
+  pause(): Promise<void>;   // stop delivering frames/samples. MP4 inputs only
+  resume(): Promise<void>;  // resume a paused input. MP4 inputs only
+}
+
+class Mp4InputHandle extends InputHandle {
+  seek(seekMs: number): Promise<void>;  // seek to position in the file (ms)
+}
+
+class WhipInputHandle extends InputHandle {
+  get endpointRoute(): string | undefined;  // WHIP endpoint URL to connect to
+  get bearerToken(): string | undefined;    // bearer token for the endpoint
+}
+```
 
 ---
 
-## OfflineSmelter (Offline Processing)
+## `OfflineSmelter` class (offline)
 
-For processing static files to produce a single output. Simplified API: define inputs before start, only one output.
+```tsx
+import { OfflineSmelter } from "@swmansion/smelter-node"
+```
+
+Simplified API optimized for rendering a single output file (e.g. combine MP4s). Lifecycle: `new OfflineSmelter()` → `await init()` → (register inputs/resources) → `await render(...)`. There is no `start()`/`terminate()`; `render` runs the whole job.
 
 ```tsx
 import { OfflineSmelter } from "@swmansion/smelter-node";
+import { View } from "@swmansion/smelter";
 
 async function run() {
   const smelter = new OfflineSmelter();
   await smelter.init();
-
-  await smelter.registerInput("vid", { type: "mp4", serverPath: "./input.mp4" });
-
-  await smelter.render(<MyScene />, {
+  // register inputs here
+  await smelter.render(<View />, {
     type: "mp4",
     serverPath: "./output.mp4",
     video: {
@@ -105,52 +192,94 @@ async function run() {
 void run();
 ```
 
-### Lifecycle
+### Constructor
 
-1. `new OfflineSmelter(manager?)` — create instance
-2. `await smelter.init()` — spawn/connect server
-3. Register inputs/resources
-4. `await smelter.render(root, output, durationMs?)` — renders and blocks until complete
+```tsx
+new OfflineSmelter(manager?: SmelterManager)
+```
+
+- `manager` — same `SmelterManager` as `Smelter`. See [Instance managers](#instance-managers).
+
+### Methods
+
+```tsx
+init(): Promise<void>
+
+// Render the React tree to a single output. Optional duration cap in ms.
+render(root: React.ReactElement, output: RegisterOutput, duration_ms?: number): Promise<object>
+
+registerInput(inputId: string, input: RegisterInput): Promise<object>
+registerImage(imageId: string, image: Renderers.RegisterImage): Promise<void>
+registerShader(shaderId: string, shader: Renderers.RegisterShader): Promise<void>
+registerFont(source: string | ArrayBuffer): Promise<void>
+```
+
+`RegisterOutput` / `RegisterInput` are the same unions as the live `Smelter` (MP4 and HLS are the practical choices). WHIP, WHEP, RTMP, and RTP are technically accepted, but offline mode renders frames as fast as possible, so real-time protocols rarely make sense. There is no `unregisterInput`/`unregisterOutput`/`registerWebRenderer`/`terminate` in offline mode.
 
 ---
 
-## SmelterManager
+## Instance managers
 
-Controls how Node.js connects to the Smelter server.
+The package controls the server via the `SmelterManager` interface, passed to the `Smelter`/`OfflineSmelter` constructor:
 
-### LocallySpawnedInstanceManager (default)
+```tsx
+type ApiRequest = { method: 'GET' | 'POST'; route: string; body?: object };
+type MultipartRequest = { method: 'POST'; route: string; body: any };
 
-Downloads and spawns a Smelter binary locally.
+type SmelterManager = {
+  setupInstance(): Promise<void>;
+  sendRequest(request: ApiRequest): Promise<object>;
+  sendMultipartRequest(request: MultipartRequest): Promise<object>;
+  registerEventListener(cb: (event: unknown) => void): void;
+};
+```
+
+Two implementations are provided.
+
+### `LocallySpawnedInstanceManager` (default)
+
+Downloads the Smelter binary and spawns a server on the local machine.
 
 ```tsx
 import Smelter, { LocallySpawnedInstanceManager } from "@swmansion/smelter-node";
 
-const manager = new LocallySpawnedInstanceManager({
-  port: 8000,
-  workingdir?: string,        // CWD and temp downloads dir
-  executablePath?: string,    // Custom binary path
-  enableWebRenderer?: boolean, // default: false
-});
+const manager = new LocallySpawnedInstanceManager({ port: 8000 });
 const smelter = new Smelter(manager);
+await smelter.init();
 ```
 
-### ExistingInstanceManager
+```tsx
+type LocallySpawnedInstanceOptions = {
+  port: number;
+  workingdir?: string;
+  executablePath?: string;
+  enableWebRenderer?: boolean;
+};
+```
 
-Connects to an already-running Smelter server.
+- `port: number` — port where the Smelter API endpoint is exposed.
+- `workingdir?: string` — working directory the instance uses: for temporary downloads (`SMELTER_DOWNLOAD_DIR`), to resolve relative paths for path options, and as the process CWD.
+- `executablePath?: string` — path to a compositor executable; if set, used instead of downloading official binaries.
+- `enableWebRenderer?: boolean` (default `false`) — enables Web Renderer support. Selects which binaries are downloaded (with/without web rendering) and sets the `SMELTER_WEB_RENDERER_ENABLE` env var.
+
+### `ExistingInstanceManager`
+
+Connects to an already-running Smelter server. Assumes it is the only client connecting to that server.
 
 ```tsx
 import Smelter, { ExistingInstanceManager } from "@swmansion/smelter-node";
 
-const manager = new ExistingInstanceManager({
-  url: "http://127.0.0.1:8000",  // http → ws, https → wss for WebSocket
-});
+const manager = new ExistingInstanceManager({ url: 'http://127.0.0.1:8000' });
 const smelter = new Smelter(manager);
+await smelter.init();
 ```
 
----
+```tsx
+type ExistingInstanceOptions = {
+  url: string | URL;
+  authorizationHeader?: string;
+};
+```
 
-## Compatibility
-
-| SDK version | Smelter server | React |
-|---|---|---|
-| v0.3.0 | v0.5.0 | 18.3.1 (recommended) |
+- `url: string | URL` — address of the running server. The protocol also determines the WebSocket protocol (`http -> ws`, `https -> wss`).
+- `authorizationHeader?: string` — value of the `Authorization` header sent with every request to the server.

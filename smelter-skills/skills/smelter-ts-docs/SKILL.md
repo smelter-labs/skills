@@ -1,179 +1,223 @@
 ---
 name: smelter-ts-docs
 description: >
-  Comprehensive reference for building applications with the Smelter TypeScript SDK (@swmansion/smelter).
-  Smelter is a media processing framework that uses React components to define video/audio compositions.
-  Use this skill when the user is building, debugging, or extending a Smelter TypeScript application,
-  asking about Smelter components, hooks, inputs, outputs, resources, or choosing between runtime packages
-  (@swmansion/smelter-node, @swmansion/smelter-web-client, @swmansion/smelter-web-wasm).
-  Triggers: "smelter", "@swmansion/smelter", video composition in TypeScript/React,
-  mixing video streams, RTMP streaming with Smelter, video processing pipeline with React,
-  offline rendering.
+  Build video and audio applications with the Smelter TypeScript SDK
+  (`@swmansion/smelter` and its runtime packages `@swmansion/smelter-node`,
+  `@swmansion/smelter-web-client`, `@swmansion/smelter-web-wasm`). Use this whenever
+  composing, mixing, layouting, streaming, or recording video/audio with Smelter's
+  React-like component API — registering inputs (MP4, RTMP, RTP, HLS, WHIP, WHEP,
+  camera, screen capture), outputs (MP4, RTMP, HLS, WHIP, WHEP, canvas), components
+  (View, Tiles, Rescaler, Text, Image, Mp4, InputStream, Shader, WebView, Show,
+  SlideShow), hooks, encoders, shaders, or side-channel processing. Reach for this
+  skill instead of guessing Smelter's API or its prop names, defaults, and
+  runtime availability — it is the complete reference, so you don't need to browse
+  smelter.dev. Targets SDK v0.4.0.
 ---
 
 # Smelter TypeScript SDK
 
-Smelter is a video/audio composition framework using React components to define scenes. You write React JSX describing the layout; Smelter renders it as actual video frames.
+Smelter is a video/audio composition framework. The TypeScript SDK lets you describe
+a live or offline composition with **React components** — you build a component tree
+the way you'd build a UI, and Smelter renders it to a video/audio stream. Standard DOM
+elements (`<div>`, `<img>`) do **not** work; you use Smelter components (`View`,
+`Text`, `InputStream`, …) instead.
 
-## Version mismatch
+## Version & compatibility
 
-This documentation refers to `^0.3.0` version of the smelter packages. When encountering API errors such as missing fields, nonexistent properties, unexpected types, or deprecated options, read `package.json` and check if this project is using the correct version.
+This reference targets SDK **v0.4.0** (Smelter server **v0.6.0**, React **18.3.1**
+recommended).
 
-If there is a version mismatch, inform the user about the **actions** they can take to resolve it and **finish the answer immediately**.
-→ For detailed instructions on what **actions** the user can take: `references/update.md`
+If you hit errors that look like version drift — a documented field missing or renamed,
+an unexpected type, a deprecated option — read `references/versioning.md`.
 
-## Core Concept
+## Pick a runtime
+
+The SDK ships as three packages, one per environment. They share the same component
+API; they differ in where your React code runs and where media is processed.
+
+- **`@swmansion/smelter-node`** — Node.js. Your React code runs in Node; a Smelter
+  **server** does the media processing. By default the server is spawned locally on
+  the same machine; you can also connect to one you deployed. Most full-featured
+  option. Use for backend pipelines, live streaming, recording, offline rendering.
+- **`@swmansion/smelter-web-client`** — Browser, server-backed. React runs in the
+  browser and drives a remote Smelter server over HTTP. There's no local server, so
+  you must point it at a deployed instance.
+- **`@swmansion/smelter-web-wasm`** — Browser, no server. The whole engine runs in
+  the browser via WebAssembly in a Web Worker. No server to deploy, but a reduced
+  feature set (e.g. browser-only inputs/outputs, limited MP4).
+
+When you don't need a server and want everything client-side, use `web-wasm`. When
+you need the full pipeline or backend control, use `node`. See `references/runtimes/`
+for the lifecycle and per-runtime input/output support, and `references/overview.md`
+for the trade-offs in depth.
+
+## Mental model
+
+1. Create a Smelter instance and `init()` it (spawns or connects to the engine).
+2. Register **inputs** (sources: MP4, RTMP, camera, …), **outputs** (destinations:
+   MP4, RTMP, HLS, canvas, …), and **resources** (images, shaders, web renderers).
+   Each output is given a **React component tree** that defines what it shows.
+3. Call `start()` (live) — outputs begin producing frames. You can keep
+   registering/unregistering inputs and outputs afterwards, and update the scene by
+   re-rendering React. For offline, call `render(...)` instead, which runs to
+   completion.
+4. `terminate()` when done (also needed to finalize MP4 files correctly).
+
+Minimal live example (Node.js):
 
 ```tsx
-// Define a scene as React JSX
-function MyScene() {
+import Smelter from "@swmansion/smelter-node";
+import { Tiles, InputStream } from "@swmansion/smelter";
+
+function Scene() {
   return (
-    <View style={{ width: 1920, height: 1080 }}>
-      <InputStream inputId="input_1" />
-    </View>
+    <Tiles>
+      <InputStream inputId="cam" />
+    </Tiles>
   );
 }
 
-// Wire it to actual media
-await smelter.registerOutput("main", <MyScene />, { type: "rtmp_client", url: "..." });
+async function run() {
+  const smelter = new Smelter();
+  await smelter.init();
+
+  await smelter.registerOutput("out", <Scene />, {
+    type: "rtmp_client",
+    url: "rtmp://127.0.0.1:8002",
+    video: {
+      resolution: { width: 1280, height: 720 },
+      encoder: { type: "ffmpeg_h264" },
+    },
+    audio: { channels: "stereo", encoder: { type: "aac" } },
+  });
+
+  await smelter.registerInput("cam", { type: "mp4", serverPath: "input.mp4" });
+  await smelter.start();
+}
+void run();
 ```
 
-## Runtime Packages — Choose One
+## Choosing a component
 
-| Package | Use when | Details |
-|---|---|---|
-| `@swmansion/smelter-node` | Server-side Node.js app | Auto-spawns Smelter binary; live + offline modes |
-| `@swmansion/smelter-web-client` | Browser app, external server | Connects to deployed Smelter server; live + offline modes |
-| `@swmansion/smelter-web-wasm` | Browser app, no server | Runs Smelter as WASM in Web Worker; Chrome only |
+All components import from `@swmansion/smelter`; standard DOM elements (`<div>`,
+`<img>`) don't work.
 
-→ For detailed setup and API for each runtime: `references/runtimes/nodejs.md`, `references/runtimes/web-client.md`, `references/runtimes/web-wasm.md`
+**Layout** — structure the scene:
 
-## Components
+| Component | Use when |
+|---|---|
+| `View` | General container, like a `<div>`: rows/columns, absolute positioning, background, padding. The default building block. |
+| `Tiles` | Auto-sized grid of children. Default choice for showing several inputs at once (e.g. a conference/call layout) when no specific layout is requested. |
+| `Rescaler` | Fit or fill a single child into a fixed area, preserving aspect ratio. |
 
-Import from `@swmansion/smelter`:
+**Media** — bring content in:
 
-```tsx
-import { View, Text, InputStream, Tiles, Rescaler, Image, Mp4, Shader, Show, SlideShow, WebView } from "@swmansion/smelter";
-```
+| Component | Use when |
+|---|---|
+| `InputStream` | Display a registered input (camera, RTMP, WHIP, RTP, …). |
+| `Mp4` | Play an MP4 directly — no separate registration. |
+| `Image` | Static image, logo, or overlay (URL or registered asset). |
+| `Shader` | Custom GPU (WGSL) effect — chroma key, color grading, transitions. |
+| `WebView` | Embed a live website rendered via Chromium. |
 
-### Layout Components
+**Utility:**
 
-| Component | Summary | When to use |
-|---|---|---|
-| **View** | Core container, like `<div>` | Structure any layout; supports absolute and static positioning, overflow, background color |
-| **Tiles** | A layout component that arranges all children side by side in equally sized, non-overlapping tiles, automatically calculating optimal rows/columns. | Multi-stream grids (e.g., video conferencing layout, side by side layouts). Use as default for multiple inputs if user does not specify a layout explicitly. |
-| **Rescaler** | Scales single child to fit, preserving aspect ratio | Fit any stream/content into a fixed area |
+| Component | Use when |
+|---|---|
+| `Text` | Any on-screen text — lower thirds, captions, labels, titles. |
+| `Show` | Show/hide children based on a timestamp (offline scheduling). |
+| `SlideShow` | Play `<Slide>` children in sequence (intros/outros). |
 
-→ `references/components/View.md`, `references/components/Tiles.md`, `references/components/Rescaler.md`
-
-### Media Components
-
-| Component | Summary | When to use |
-|---|---|---|
-| **InputStream** | Displays a registered input stream | Show any registered input (camera, RTP, RTMP, WHIP, etc.) |
-| **Mp4** | Plays MP4 file directly (no registration needed) | Simple one-off MP4 playback without registration overhead |
-| **Image** | Renders an image (URL or registered asset) | Static images, logos, overlays |
-| **Shader** | Renders output of a WGSL GPU shader | Custom visual effects, chroma key, color grading |
-| **WebView** | Renders a live website via Chromium | Embedding web-based graphics or interactive content |
-
-→ `references/components/InputStream.md`, `references/components/Mp4.md`, `references/components/Image.md`, `references/components/Shader.md`, `references/components/WebView.md`
-
-### Utility Components
-
-| Component | Summary | When to use |
-|---|---|---|
-| **Text** | Renders styled text | Whenever stream needs to display text, specifically for lower thirds, captions, labels, titles, etc. |
-| **Show** | Conditionally shows children based on timestamp | Scheduling elements in offline processing |
-| **SlideShow** | Sequences `<Slide>` children one after another | Intro/outro sequences, sequential content |
-
-→ `references/components/Text.md`, `references/components/Show.md`, `references/components/SlideShow.md`
-
-## Props (Styling)
-
-| Props Type | Used by | Summary |
-|---|---|---|
-| **ViewStyleProps** | `<View>` | Width/height, direction (row/column), absolute positioning, overflow, background, padding |
-| **TextStyleProps** | `<Text>` | fontSize (required), font family/weight/style, color, alignment, wrapping |
-| **TilesStyleProps** | `<Tiles>` | Width/height, tile aspect ratio, margin, padding, alignment |
-| **RescalerStyleProps** | `<Rescaler>` | Rescaling mode (fit/fill), alignment, absolute positioning |
-| **Transition** | `<View>`, `<Tiles>`, `<Rescaler>` | Animated scene updates with duration and easing |
-| **EasingFunction** | `Transition` | `"linear"`, `"bounce"`, or custom `cubic_bezier` |
-
-→ `references/props/ViewStyleProps.md`, `references/props/TextStyleProps.md`, `references/props/TilesStyleProps.md`, `references/props/RescalerStyleProps.md`, `references/props/Transition.md`, `references/props/EasingFunction.md`
+For runtime package selection, see "Pick a runtime" above.
 
 ## Hooks
 
-| Hook | Summary | When to use |
-|---|---|---|
-| **useInputStreams()** | Returns state of all registered inputs | Conditionally render based on stream status (ready/playing/finished) |
-| **useAudioInput(id, opts)** | Controls audio for an input without rendering it visually | Background audio mixing without visual component |
-| **useAfterTimestamp(ms)** | Returns `true` once a timestamp passes | Time-based scene changes in offline processing |
-| **useBlockingTask(fn)** | Runs async fn, blocks offline rendering until resolved | Load remote data before offline rendering proceeds |
+Import from `@swmansion/smelter` (standard React hooks work too).
 
-→ `references/hooks/useInputStreams.md`, `references/hooks/useAudioInput.md`, `references/hooks/useAfterTimestamp.md`, `references/hooks/useBlockingTask.md`
+| Hook | What it does |
+|---|---|
+| `useInputStreams()` | State of all registered inputs (e.g. ready / playing / finished) — render conditionally on stream status. |
+| `useAudioInput(id, { volume })` | Control an input's audio (volume `0`–`2`) without rendering it visually. |
+| `useAfterTimestamp(ms)` | Returns `true` once a timestamp passes — for time-based changes in offline processing. |
+| `useBlockingTask(fn)` | Run an async task, blocking offline rendering until it resolves (e.g. fetch data before rendering). |
+
+Details: `references/hooks/<name>.md`.
 
 ## Inputs
 
-Registered via `smelter.registerInput(id, options)`. Displayed via `<InputStream inputId="id" />`.
+Register with `smelter.registerInput(id, options)`, then display via `<InputStream inputId="id" />`.
 
-| Input type | Runtime | Use when |
+| `type` | Runtime | Use for |
 |---|---|---|
-| `mp4` | All | Play a local/remote MP4 file |
-| `rtp_stream` | Node.js, Web Client | Receive RTP stream over UDP/TCP |
-| `hls` | Node.js | Consume HLS playlist |
-| `whip_server` | Node.js, Web Client | Accept WebRTC stream via WHIP protocol |
-| `whep_client` | Node.js, Web Client | Pull stream from WHEP server |
-| `rtmp_server` | Node.js, Web Client | Accept RTMP stream (OBS, FFmpeg) — experimental |
-| `camera` | WASM only | Browser camera via `getUserMedia()` |
-| `screen_capture` | WASM only | Browser screen capture via `getDisplayMedia()` |
-| `stream` | WASM only | Any `MediaStream` object |
-| `whep_client` (WASM) | WASM only | Pull from WHEP server in browser |
+| `mp4` | Node · Web Client · WASM | Play a local/remote MP4 file. |
+| `rtmp_server` | Node · Web Client | Accept an RTMP stream (OBS, FFmpeg). |
+| `rtp_stream` | Node · Web Client | Receive RTP over UDP/TCP. |
+| `hls` | Node | Consume an HLS playlist. |
+| `whip_server` | Node · Web Client | Accept a WebRTC stream via WHIP. |
+| `whep_client` | Node · Web Client | Pull from a WHEP server. |
+| `v4l2` | Node · Web Client | Linux video device (experimental). |
+| `camera` | WASM | Browser camera (`getUserMedia`). |
+| `screen_capture` | WASM | Browser screen capture. |
+| `stream` | WASM | Any `MediaStream`. |
+| `whep_client` (wasm) | WASM | Pull from a WHEP server in-browser. |
 
-→ Full details: `references/inputs.md`
+Details: `references/inputs/<type>.md`.
 
 ## Outputs
 
-Registered via `smelter.registerOutput(id, <ReactRoot />, options)`.
+Register with `smelter.registerOutput(id, <Scene/>, options)`.
 
-| Output type | Runtime | Use when |
+| `type` | Runtime | Use for |
 |---|---|---|
-| `mp4` | Node.js, Web Client | Save to MP4 file |
-| `rtp_stream` | Node.js, Web Client | Stream over RTP |
-| `hls` | Node.js, Web Client | Stream over HLS. User will need to handle serving the files on their own. |
-| `whip_client` | Node.js, Web Client | Push via WebRTC WHIP |
-| `whep_server` | Node.js, Web Client | Serve via WebRTC WHEP to multiple viewers |
-| `rtmp_client` | Node.js, Web Client | Push to RTMP server (YouTube, Twitch) |
-| `canvas` | WASM only | Render to `HTMLCanvasElement` |
-| `stream` | WASM only | Return a `MediaStream` |
-| `whip_client` (WASM) | WASM only | Push via WebRTC WHIP from browser |
+| `mp4` | Node · Web Client | Record to an MP4 file. |
+| `rtmp_client` | Node · Web Client | Push to an RTMP server (YouTube, Twitch). |
+| `rtp_stream` | Node · Web Client | Stream over RTP. |
+| `hls` | Node · Web Client | Serve via HLS (you host the segments). |
+| `whip_client` | Node · Web Client | Push via WebRTC WHIP. |
+| `whep_server` | Node · Web Client | Serve via WebRTC WHEP to viewers. |
+| `canvas` | WASM | Render to an `HTMLCanvasElement`. |
+| `stream` | WASM | Return a `MediaStream`. |
+| `whip_client` (wasm) | WASM | Push via WHIP from the browser. |
 
-→ Full details: `references/outputs.md`
+Encoder options are documented inline in each output file. Details: `references/outputs/<type>.md`.
 
 ## Resources
 
-Pre-registered assets used by components.
+Register before use; each is referenced by the matching component.
 
-| Resource | Registered via | Used by component |
+| Resource | Register with | Used by |
 |---|---|---|
-| Image | `smelter.registerImage(id, opts)` | `<Image imageId="id" />` |
-| Shader | `smelter.registerShader(id, opts)` | `<Shader shaderId="id" />` |
-| WebRenderer | `smelter.registerWebRenderer(id, opts)` | `<WebView instanceId="id" />` |
-| Font | `smelter.registerFont(source)` | `<Text>` components |
+| Image | `registerImage(id, opts)` | `<Image imageId="id" />` |
+| Shader | `registerShader(id, opts)` | `<Shader shaderId="id" />` |
+| Web renderer | `registerWebRenderer(id, opts)` | `<WebView instanceId="id" />` |
+| Font | `registerFont(source)` | `<Text>` |
 
-→ Full details: `references/resources.md`
+Details: `references/resources/<name>.md`.
 
+## How to use this reference
 
-## Patterns & Best Practices
+Open the file that matches your task. There's one file per API item, so you load only
+what you need. Each file is self-contained and documents the **full** API surface for
+its item — every prop, default, and runtime availability. If an option isn't listed,
+the SDK doesn't support it.
 
-Real-world patterns for building Smelter apps:
+**Concepts & recipes** (open when relevant — the essentials are already above)
+- `references/overview.md` — the deeper conceptual model: the layout/positioning
+  **sizing rules** (the non-obvious part — open this before non-trivial layout work),
+  offline vs live, the glossary, the shader concept, and runtime trade-offs.
+- `references/patterns.md` — reusable recipes for common tasks: side-by-side/grid
+  layouts, overlays, transitions, adding/removing inputs at runtime, web rendering.
 
-| Pattern | Summary |
-|---|---|
-| **Shader Wrapping** | Recursively nest `<Shader>` components to chain multiple effects |
-| **Input State Rendering** | Use `useInputStreams()` for spinner/offline/playing conditional rendering |
-| **Animations via Timers** | `setInterval` + React state for swap transitions, marquee, fades |
-| **Shader Color Params** | Convert hex colors to per-channel `f32` fields (`_r`, `_g`, `_b`) |
-| **Multi-Output Shared Store** | Same store for WHEP live + MP4 recording = identical output |
-| **Scrolling Text** | Animate `<View>` position inside `overflow: 'hidden'` container |
+**API reference** — the index tables above name every component, hook, input, output,
+and resource; open the matching file at `references/<category>/<name>.md` for its full
+API. Runtime classes and the init/start/terminate lifecycle live in
+`references/runtimes/{nodejs,web-client,web-wasm}.md`. Component style props are inlined
+per component; output encoders are inlined per output.
 
-→ Full details and code examples: `references/patterns.md`
+**Operations & integration**
+- `references/side-channel.md` — feeding external data (e.g. ML results) into a
+  composition from the TypeScript side.
+- `references/side-channel-python.md` — the companion Python side-channel API,
+  usable alongside the TS SDK.
+- `references/deployment.md` — running and deploying the Smelter server binary
+  (Docker, binaries, requirements) for `node` / `web-client` setups.
