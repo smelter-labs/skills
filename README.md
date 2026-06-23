@@ -2,6 +2,11 @@
 
 Repository contains [Agent Skills](https://agentskills.io/home) for [Smelter](https://smelter.dev/) by [Software Mansion](https://swmansion.com/)
 
+## Available skills
+
+- **`smelter-ts-docs`** — build video/audio apps with the Smelter TypeScript SDK (`@swmansion/smelter` and its runtime packages): the React-like component API, inputs, outputs, encoders, hooks, resources, and runtimes.
+- **`smelter-http-api-docs`** — drive a Smelter server over its HTTP API: routes, WebSocket events, scene components, inputs, outputs, encoders, resources, and side-channel processing.
+
 ## Installation
 
 ### Claude Code users
