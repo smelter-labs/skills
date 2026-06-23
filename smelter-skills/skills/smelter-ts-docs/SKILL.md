@@ -179,7 +179,25 @@ Register with `smelter.registerOutput(id, <Scene/>, options)`.
 | `stream` | WASM | Return a `MediaStream`. |
 | `whip_client` (wasm) | WASM | Push via WHIP from the browser. |
 
-Encoder options are documented inline in each output file. Details: `references/outputs/<type>.md`.
+Details: `references/outputs/<type>.md`. Each output file lists the encoders it accepts
+and links to the encoder reference (see **Encoders** below).
+
+## Encoders
+
+Set an output's `video.encoder` / `audio.encoder` (or `encoderPreferences` for WHIP) to a
+`{ type, ... }` object. Full option tables: `references/outputs/encoders/<name>.md`.
+
+| `type` | Kind | Notes |
+|---|---|---|
+| `ffmpeg_h264` | video | Software H.264 (FFmpeg). Default for most outputs. |
+| `vulkan_h264` | video | Hardware H.264. Requires the `gpu-video` build. |
+| `ffmpeg_vp8` | video | Software VP8 (FFmpeg). |
+| `ffmpeg_vp9` | video | Software VP9 (FFmpeg). |
+| `aac` | audio | AAC. Used by `mp4`, `hls`, `rtmp`. |
+| `opus` | audio | Opus. Used by `rtp`, `whip`, `whep`, `rtmp`. |
+
+Which encoders a given output accepts is listed in that output's file (some are gated, e.g.
+VP8/VP9/Opus over RTMP need E-RTMP).
 
 ## Resources
 
@@ -209,10 +227,11 @@ the SDK doesn't support it.
   layouts, overlays, transitions, adding/removing inputs at runtime, web rendering.
 
 **API reference** — the index tables above name every component, hook, input, output,
-and resource; open the matching file at `references/<category>/<name>.md` for its full
-API. Runtime classes and the init/start/terminate lifecycle live in
+encoder, and resource; open the matching file at `references/<category>/<name>.md` for its
+full API. Runtime classes and the init/start/terminate lifecycle live in
 `references/runtimes/{nodejs,web-client,web-wasm}.md`. Component style props are inlined
-per component; output encoders are inlined per output.
+per component; output encoders are one file each under `references/outputs/encoders/` (each
+output lists which it accepts and links to them).
 
 **Operations & integration**
 - `references/side-channel.md` — feeding external data (e.g. ML results) into a

@@ -105,57 +105,13 @@ Defines when the output stream ends based on input stream states. Set exactly on
 
 ## Video encoder options
 
-`video.encoder` is one of:
+`video.encoder` is one of (see the encoder file for the full option list):
 
-### { type: "ffmpeg_h264" }
-
-```tsx
-type FfmpegH264EncoderOptions = {
-  type: "ffmpeg_h264";
-  bitrate?: number | { averageBitrate: number; maxBitrate: number };
-  keyframeIntervalMs?: number;
-  preset?:
-    | "ultrafast" | "superfast" | "veryfast" | "faster" | "fast"
-    | "medium" | "slow" | "slower" | "veryslow" | "placebo";
-  pixelFormat?: "yuv420p" | "yuv422p" | "yuv444p";
-  ffmpegOptions?: Record<string, string>;
-};
-```
-
-- **bitrate** — `number | { averageBitrate; maxBitrate }`. Bits/sec. Bare number sets `averageBitrate`; `maxBitrate` becomes 1.25x. Default: **libx264** constant quality (crf 23); **libopenh264** / **h264_videotoolbox** computed from framerate and resolution (30 FPS 1080p ≈ 5000 kb/s avg, 6250 kb/s max).
-  - **averageBitrate** — `number`. **maxBitrate** — `number`.
-- **keyframeIntervalMs** — `number`. Default `5000`.
-- **preset** — listed preset. Default `"fast"`. Encoder must support it.
-- **pixelFormat** — `"yuv420p" | "yuv422p" | "yuv444p"`. Default `"yuv420p"`. libx264 all three; libopenh264 / h264_videotoolbox only `yuv420p`.
-- **ffmpegOptions** — `Record<string, string>`.
-
-### { type: "vulkan_h264" }
-
-Hardware encoder. Requires a GPU supporting Vulkan Video encoding (`gpu-video` build).
-
-```tsx
-type VulkanH264EncoderOptions = {
-  type: "vulkan_h264";
-  bitrate?: number | { averageBitrate: number; maxBitrate: number };
-  keyframeIntervalMs?: number;
-};
-```
-
-- **bitrate** — `number | { averageBitrate; maxBitrate }`. Bare number sets `averageBitrate`; `maxBitrate` becomes 1.25x. Default computed from framerate and resolution (30 FPS 1080p ≈ 5000 kb/s avg, 6250 kb/s max).
-  - **averageBitrate** — `number`. **maxBitrate** — `number`.
-- **keyframeIntervalMs** — `number`. Default `5000`.
+- `{ type: "ffmpeg_h264" }` — software H.264, the default. See `outputs/encoders/ffmpeg-h264.md`.
+- `{ type: "vulkan_h264" }` — hardware H.264, requires the `gpu-video` build. See `outputs/encoders/vulkan-h264.md`.
 
 ## Audio encoder options
 
-`audio.encoder` must be:
+`audio.encoder` is one of:
 
-### { type: "aac" }
-
-```tsx
-type AacEncoderOptions = {
-  type: "aac";
-  sampleRate?: number;
-};
-```
-
-- **sampleRate** — `number`. Default `44100`. Supported: `8000`, `16000`, `24000`, `44100`, `48000`.
+- `{ type: "aac" }` — see `outputs/encoders/aac.md`.
