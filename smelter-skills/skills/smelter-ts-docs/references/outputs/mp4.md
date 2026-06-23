@@ -104,59 +104,13 @@ Defines when the output stream ends based on input stream states. Set exactly on
 
 ## Video encoder options
 
-`video.encoder` is one of:
+`video.encoder` is one of (see the encoder file for the full option list):
 
-### { type: "ffmpeg_h264" }
-
-```tsx
-type FfmpegH264EncoderOptions = {
-  type: "ffmpeg_h264";
-  bitrate?: number | { averageBitrate: number; maxBitrate: number };
-  keyframeIntervalMs?: number;
-  preset?:
-    | "ultrafast" | "superfast" | "veryfast" | "faster" | "fast"
-    | "medium" | "slow" | "slower" | "veryslow" | "placebo";
-  pixelFormat?: "yuv420p" | "yuv422p" | "yuv444p";
-  ffmpegOptions?: Record<string, string>;
-};
-```
-
-- **bitrate** — `number | { averageBitrate: number; maxBitrate: number }`. Bits per second. A bare number sets `averageBitrate`, and `maxBitrate` becomes 1.25x that. Default depends on encoder: **libx264** uses constant quality (crf 23); **libopenh264** / **h264_videotoolbox** compute from framerate and resolution (e.g. 30 FPS 1080p ≈ 5000 kb/s average, 6250 kb/s max).
-  - **averageBitrate** — `number`. Target average; encoder may temporarily rise to maxBitrate.
-  - **maxBitrate** — `number`. Upper bound.
-- **keyframeIntervalMs** — `number`. Default `5000`. Max interval between keyframes.
-- **preset** — one of the listed presets. Default `"fast"`. Ensure your encoder supports the chosen preset.
-- **pixelFormat** — `"yuv420p" | "yuv422p" | "yuv444p"`. Default `"yuv420p"`. Supported values depend on encoder: **libx264** all three; **libopenh264** / **h264_videotoolbox** only `yuv420p`.
-- **ffmpegOptions** — `Record<string, string>`. Raw FFmpeg encoder options.
-
-### { type: "vulkan_h264" }
-
-Hardware encoder. Requires a GPU supporting Vulkan Video encoding (the `gpu-video` build).
-
-```tsx
-type VulkanH264EncoderOptions = {
-  type: "vulkan_h264";
-  bitrate?: number | { averageBitrate: number; maxBitrate: number };
-  keyframeIntervalMs?: number;
-};
-```
-
-- **bitrate** — `number | { averageBitrate: number; maxBitrate: number }`. A bare number sets `averageBitrate`; `maxBitrate` becomes 1.25x. Default computed from framerate and resolution (30 FPS 1080p ≈ 5000 kb/s avg, 6250 kb/s max).
-  - **averageBitrate** — `number`.
-  - **maxBitrate** — `number`.
-- **keyframeIntervalMs** — `number`. Default `5000`.
+- `{ type: "ffmpeg_h264" }` — software H.264, the default. See `outputs/encoders/ffmpeg-h264.md`.
+- `{ type: "vulkan_h264" }` — hardware H.264, requires the `gpu-video` build. See `outputs/encoders/vulkan-h264.md`.
 
 ## Audio encoder options
 
 `audio.encoder` is one of:
 
-### { type: "aac" }
-
-```tsx
-type AacEncoderOptions = {
-  type: "aac";
-  sampleRate?: number;
-};
-```
-
-- **sampleRate** — `number`. Default `44100`. Supported: `8000`, `16000`, `24000`, `44100`, `48000`.
+- `{ type: "aac" }` — see `outputs/encoders/aac.md`.
