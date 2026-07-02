@@ -126,6 +126,10 @@ it ignores the parent's normal flow:
 > components *respect* these values on their children — but a non-layout component
 > can also carry them (to position itself within a layout parent).
 
+### Layout count limit
+
+At most **100 visible elements** can be rendered per layout tree — elements that draw nothing (e.g. a `View` without a background or border) don't count. Over the limit Smelter logs `Max layouts count (100) exceeded` and some elements are silently not rendered. Workaround: wrap a dense subtree in a passthrough `Shader` — it counts as a single element and its content gets its own budget (the example shader in `components/shader.md` is a passthrough).
+
 ### Styling and transitions
 
 Most components accept a `style` prop — an object of visual properties, similar to

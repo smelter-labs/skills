@@ -56,6 +56,10 @@ positioned children (no absolute fields) are laid out next to each other along t
 > ⚠️ **Caution:** A `View` does not auto-expand to fit its children, and rotation of
 > complex elements is not fully supported yet.
 
+### Layout count limit
+
+At most **100 visible elements** can be rendered per layout tree — elements that draw nothing (e.g. a `view` without a background or border) don't count. Over the limit Smelter logs `Max layouts count (100) exceeded` and some elements are silently not rendered. Workaround: wrap a dense subtree in a passthrough `shader` (a fragment shader that just returns `textureSample(textures[0], sampler_, input.tex_coords)`) — it counts as a single element and its content gets its own budget.
+
 ## Live vs offline processing
 
 - **Live processing** — any real-time input or output is involved. Processing is

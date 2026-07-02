@@ -67,6 +67,8 @@ await smelter.registerShader("example_shader", { source: EXAMPLE_SHADER });
 > ```
 > and `textureSample(texture, sampler_, ...)`.
 
+The example above is a 1:1 passthrough — wrapping a dense subtree in it collapses the subtree to a single rendered element, which works around the 100-element layout limit (see `overview.md`).
+
 ## Type
 
 ```tsx
