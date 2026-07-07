@@ -4,6 +4,8 @@ A component that represents the output of a user-provided WGSL shader. All child
 
 > **Note:** To use this component, first register the shader with a matching `shader_id` using a register shader request (see `resources/shader.md` and `routes.md`).
 
+A passthrough shader (fragment returning `textureSample(textures[0], sampler_, input.tex_coords)`) collapses its child subtree to a single rendered element — a workaround for the 100-element layout limit (see `overview.md`).
+
 ## Usage
 
 Register a shader with id `example_shader` (`source` is the WGSL shader code):

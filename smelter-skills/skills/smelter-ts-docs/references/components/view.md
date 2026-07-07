@@ -29,6 +29,32 @@ function ExampleApp() {
 
 > ⚠️ **Caution:** A parent `View` does not respect the size of its children — it will not auto-expand to fit them.
 
+> **Box model:** `width`/`height` describe the content box. `borderWidth` and `padding` are added **outside** it — rendered size = `width + paddingLeft + paddingRight + 2*borderWidth` (same for height) — and `top`/`left` position the outer (border) edge. To center on a point, offset by half the *rendered* size.
+
+## Centering
+
+`View` has no flex-style alignment (no `justifyContent`/`alignItems`); static children stack from the top-left along `direction`. Unsized static children split the remaining space equally — which enables the spacer pattern:
+
+- **Spacer views** (general-purpose): surround the child with empty `<View />`s along the parent's `direction`; the spacers absorb the slack equally. Nest row inside column to center in both axes:
+
+  ```tsx
+  <View style={{ direction: "column" }}>
+    <View />
+    {/* explicit height required: an unsized middle child would be
+        treated as a spacer and get 1/3 of the height */}
+    <View style={{ direction: "row", height: 200 }}>
+      <View />
+      <View style={{ width: 300, height: 200 }} /> {/* centered child */}
+      <View />
+    </View>
+    <View />
+  </View>
+  ```
+
+- **Media / subtrees that may resize**: wrap in a `Rescaler` — `horizontalAlign`/`verticalAlign` default to `"center"`; note it scales the child to fit (including upscaling smaller children).
+- **Text**: give `Text` a `width` equal to its container and `align: "center"`.
+- **Absolute positioning**: `left: (parentWidth - childWidth) / 2` (same for `top`); `borderWidth`/`padding` grow the box beyond its declared size, so offset by half the rendered size.
+
 ## Transitions
 
 On a scene update, `View` animates between the old and new state if `transition` is set. Both scenes must contain a `View` with the same `id`. Only some fields animate:

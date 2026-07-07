@@ -252,15 +252,19 @@ await smelter.init();
 type LocallySpawnedInstanceOptions = {
   port: number;
   workingdir?: string;
-  executablePath?: string;
+  mainExecutablePath?: string;
+  dependencyCheckPath?: string;
   enableWebRenderer?: boolean;
 };
 ```
 
 - `port: number` — port where the Smelter API endpoint is exposed.
 - `workingdir?: string` — working directory the instance uses: for temporary downloads (`SMELTER_DOWNLOAD_DIR`), to resolve relative paths for path options, and as the process CWD.
-- `executablePath?: string` — path to a compositor executable; if set, used instead of downloading official binaries.
+- `mainExecutablePath?: string` — path to a compositor executable; if set, used instead of downloading official binaries.
+- `dependencyCheckPath?: string` — path to a helper binary that verifies system dependencies before the main process starts; only relevant with `mainExecutablePath` (the check is skipped when unset).
 - `enableWebRenderer?: boolean` (default `false`) — enables Web Renderer support. Selects which binaries are downloaded (with/without web rendering) and sets the `SMELTER_WEB_RENDERER_ENABLE` env var.
+
+> ⚠️ The `SMELTER_PATH` env var is only honored by the default manager (`new Smelter()` with no arguments). If you construct `LocallySpawnedInstanceManager` yourself (e.g. to set `port`), forward it explicitly: `mainExecutablePath: process.env.SMELTER_PATH`.
 
 ### `ExistingInstanceManager`
 

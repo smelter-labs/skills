@@ -33,6 +33,41 @@ Content-Type: application/json
 - **Absolute**: a child is absolutely positioned when it sets `top`/`left`/`right`/`bottom`/`rotation` (relative to its parent), and the parent supports it. `View` supports absolutely positioning its children; without explicit `width`/`height` an absolutely positioned child inherits them from the parent. A `View` itself can be absolutely positioned relative to its parent if the parent supports it.
 - **Static** (`direction: "row" | "column"`): children are placed next to each other (row aligned to the top, column aligned to the left). Per-child sizing: explicit `width`/`height` wins; an undefined `height` matches the parent; for undefined `width`, the defined widths are summed and the remaining parent width is divided equally between children with unknown widths (zero if the defined widths already exceed the parent). See `overview.md` for the full layout sizing model.
 
+> **Box model:** `width`/`height` describe the content box. `border_width` and `padding` are added **outside** it — rendered size = `width + padding_left + padding_right + 2*border_width` (same for height) — and `top`/`left` position the outer (border) edge. To center on a point, offset by half the *rendered* size.
+
+## Centering
+
+`view` has no flex-style alignment (no `justify-content`/`align-items` equivalents); static children stack from the top-left along `direction`. Unsized static children split the remaining space equally — which enables the spacer pattern:
+
+- **Spacer views** (general-purpose): surround the child with empty `view`s along the parent's `direction`; the spacers absorb the slack equally. Nest row inside column to center in both axes:
+
+  ```json
+  {
+    "type": "view",
+    "direction": "column",
+    "children": [
+      { "type": "view" },
+      {
+        "type": "view",
+        "direction": "row",
+        "height": 200,
+        "children": [
+          { "type": "view" },
+          { "type": "view", "width": 300, "height": 200 },
+          { "type": "view" }
+        ]
+      },
+      { "type": "view" }
+    ]
+  }
+  ```
+
+  The middle child needs an explicit `height` here — an unsized middle child would be treated as a spacer and get 1/3 of the height (likewise `width` when the outer direction is `"row"`).
+
+- **Media / subtrees that may resize**: wrap in a `rescaler` — `horizontal_align`/`vertical_align` default to `"center"`; note it scales the child to fit (including upscaling smaller children).
+- **Text**: give `text` a `width` equal to its container and `align: "center"`.
+- **Absolute positioning**: `left = (parent_width - child_width) / 2` (same for `top`); `border_width`/`padding` grow the box beyond its declared size, so offset by half the rendered size.
+
 ### Transitions
 
 On a scene update, a `View` animates between the old and new state if `transition` is defined and both scenes contain a component with the same `id`. Only some fields animate:

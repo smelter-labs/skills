@@ -139,6 +139,8 @@ Font family name. Generic-family values like `"sans-serif"` are not supported.
 - **Type**: `string`
 - **Default**: `"Verdana"`
 
+On Node.js (and any natively running server) Smelter loads the host's installed fonts at startup, so any installed font works by family name without registering it — verify availability with `fc-match "<family>"`. Use `smelter.registerFont()` only for fonts not installed on the host. System-font loading can be disabled with `SMELTER_LOAD_SYSTEM_FONTS=false`. The only bundled font is Inter — the default `"Verdana"` renders only if the host provides it (Linux containers usually don't; symbol-heavy glyph ranges may also be missing from it). In `@swmansion/smelter-web-wasm` there is no host font database, so fonts must be registered with `registerFont`.
+
 ---
 
 ### fontStyle
